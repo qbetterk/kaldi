@@ -55,7 +55,7 @@ mkdir -p $dir
 
 # See $lang/phones.txt and decide which should be garbage
 garbage_phones="lau spn"
-silence_phones="nsn SIL"
+silence_phones="nsn sil"
 
 for p in $garbage_phones; do 
   for affix in "" "_B" "_E" "_I" "_S"; do

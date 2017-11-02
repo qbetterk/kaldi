@@ -45,15 +45,18 @@ extra_right_context=0
 extra_left_context_initial=-1
 extra_right_context_final=-1
 frames_per_chunk=150
+sil_scale=0.05
+
 
 # Decoding options
 graph_opts="--min-silence-duration=0.03 --min-speech-duration=0.3 --max-speech-duration=10.0"
 acwt=0.3
+. utils/parse_options.sh
 
 # These <from>_in_<to>_weight represent the fraction of <from> probability 
 # to transfer to <to> class.
 # e.g. --speech-in-sil-weight=0.0 --garbage-in-sil-weight=0.0 --sil-in-speech-weight=0.0 --garbage-in-speech-weight=0.3
-transform_probs_opts=""
+transform_probs_opts="--sil-scale=${sil_scale}"
 
 segment_padding=0.2   # Duration (in seconds) of padding added to segments 
 

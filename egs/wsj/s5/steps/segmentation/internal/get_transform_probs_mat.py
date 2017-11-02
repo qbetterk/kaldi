@@ -56,6 +56,12 @@ def run(args):
 
     priors_sum = sum(priors[0])
     sil_prior = priors[0][0] / priors_sum
+
+    sys.stderr.write('\n ################')
+    sys.stderr.write('%f -------- %f' %(sil_prior,args.sil_scale))
+    sys.stderr.write('################\n')
+
+
     speech_prior = priors[0][1] / priors_sum
     garbage_prior = priors[0][2] / priors_sum
 
