@@ -1,0 +1,16 @@
+iadc /export/b05/qkun/kaldi/egs/callhome_diarization111/sad_version/mfcc_hires_bp/raw_mfcc_callhome_bp_hires.6.ark:5
+iadd /export/b05/qkun/kaldi/egs/callhome_diarization111/sad_version/mfcc_hires_bp/raw_mfcc_callhome_bp_hires.6.ark:225319
+iade /export/b05/qkun/kaldi/egs/callhome_diarization111/sad_version/mfcc_hires_bp/raw_mfcc_callhome_bp_hires.6.ark:384945
+iadf /export/b05/qkun/kaldi/egs/callhome_diarization111/sad_version/mfcc_hires_bp/raw_mfcc_callhome_bp_hires.6.ark:608187
+iadg /export/b05/qkun/kaldi/egs/callhome_diarization111/sad_version/mfcc_hires_bp/raw_mfcc_callhome_bp_hires.6.ark:797269
+iadh /export/b05/qkun/kaldi/egs/callhome_diarization111/sad_version/mfcc_hires_bp/raw_mfcc_callhome_bp_hires.6.ark:972715
+iadi /export/b05/qkun/kaldi/egs/callhome_diarization111/sad_version/mfcc_hires_bp/raw_mfcc_callhome_bp_hires.6.ark:1880333
+iadj /export/b05/qkun/kaldi/egs/callhome_diarization111/sad_version/mfcc_hires_bp/raw_mfcc_callhome_bp_hires.6.ark:2128607
+iadk /export/b05/qkun/kaldi/egs/callhome_diarization111/sad_version/mfcc_hires_bp/raw_mfcc_callhome_bp_hires.6.ark:2405217
+iadl /export/b05/qkun/kaldi/egs/callhome_diarization111/sad_version/mfcc_hires_bp/raw_mfcc_callhome_bp_hires.6.ark:3107763
+iadm /export/b05/qkun/kaldi/egs/callhome_diarization111/sad_version/mfcc_hires_bp/raw_mfcc_callhome_bp_hires.6.ark:3282733
+iadn /export/b05/qkun/kaldi/egs/callhome_diarization111/sad_version/mfcc_hires_bp/raw_mfcc_callhome_bp_hires.6.ark:3928187
+iado /export/b05/qkun/kaldi/egs/callhome_diarization111/sad_version/mfcc_hires_bp/raw_mfcc_callhome_bp_hires.6.ark:4096493
+iadp /export/b05/qkun/kaldi/egs/callhome_diarization111/sad_version/mfcc_hires_bp/raw_mfcc_callhome_bp_hires.6.ark:4297251
+iadq /export/b05/qkun/kaldi/egs/callhome_diarization111/sad_version/mfcc_hires_bp/raw_mfcc_callhome_bp_hires.6.ark:4470009
+iadr /export/b05/qkun/kaldi/egs/callhome_diarization111/sad_version/mfcc_hires_bp/raw_mfcc_callhome_bp_hires.6.ark:5964479
