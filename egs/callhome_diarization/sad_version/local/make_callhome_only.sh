@@ -1,8 +1,4 @@
 #!/bin/bash
-# Copyright 2017   David Snyder
-# Apache 2.0.
-#
-# TODO, this is a temporary data prep script for Callhome.
 
 set -e
 
