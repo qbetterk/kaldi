@@ -109,7 +109,6 @@ if [ $stage -le 2 ]; then
   fi
 
 
-
    local/make_sre.sh data
    local/make_swbd2_phase2.pl /export/corpora5/LDC/LDC99S79 \
                                data/swbd2_phase2_train
