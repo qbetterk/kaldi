@@ -1,7 +1,7 @@
 #!/bin/bash
 
 TALKBANK=/export/a15/mmaciej2/data/CITI/VanDam/
-DATA=data/vandam_orig
+DATA=data/vandam
 
 mkdir -p $DATA/xml/
 

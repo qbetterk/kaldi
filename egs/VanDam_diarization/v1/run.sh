@@ -37,16 +37,15 @@ if [ $stage -le 0 ];then
     #local/make_mx6.sh
     run_mx6.sh
 
-    #cp -r data/voxceleb data/train
-    utils/combine_data.sh data/train data/mx6_mic data/voxceleb
-
+    cp -r data/voxceleb data/train
+    #utils/combine_data.sh data/train data/mx6_mic data/voxceleb
 fi
 
 if [ $stage -le 1 ];then
 
     # the data is in /export/a16/mmaciej2/data/CITI/vandam
 
-    local/make_vandam_sort.sh
+    local/make_vandam.sh
    
 #    steps/segmentation/detect_speech_activity.sh \
 #                --extra-left-context 70 --extra-right-context 0 --frames-per-chunk 150 \
@@ -65,6 +64,7 @@ if [ $stage -le 1 ];then
 #
 #
     local/split_vandam.sh data/vandam data/
+    local/make_vandam_test.sh
 
     # The script local/make_vandam.sh splits vandam into two parts, called
     # vandam1 and vandam2.  Each partition is treated like a held-out
@@ -77,7 +77,7 @@ fi
 
 if [ $stage -le 2 ];then
 
-    for name in vandam_trainplda vandam1 vandam2; do
+    for name in vandam_trainplda vandam1_test vandam2_test; do
 	steps/make_mfcc.sh --mfcc-config conf/mfcc.conf --nj 40 --cmd "$train_cmd" \
 			   data/$name exp/make_mfcc $mfccdir
 	utils/fix_data_dir.sh data/$name
@@ -86,8 +86,8 @@ fi
 
 
 if [ $stage -le 3 ];then    
-    for name in vandam_trainplda vandam1 vandam2; do
-    	sid/compute_vad_decision.sh --nj 40 --cmd "$train_cmd" \
+    for name in vandam_trainplda vandam1_test vandam2_test; do
+    	sid/compute_vad_decision.sh --nj 20 --cmd "$train_cmd" \
     				    data/$name exp/make_vad $vaddir
     	utils/fix_data_dir.sh data/$name
     done
@@ -144,13 +144,13 @@ if [ $stage -le 8 ];then
     diarization/extract_ivectors.sh --cmd "$train_cmd --mem 20G" \
 				    --nj 40 --use-vad false --chunk-size $chunk_size --period $period \
 				    --min-chunk-size $min_chunk_size exp/extractor_c${num_components}_i${ivector_dim} \
-				    data/vandam1 exp/ivectors_vandam1
+				    data/vandam1_test exp/ivectors_vandam1
 
     
     diarization/extract_ivectors.sh --cmd "$train_cmd --mem 20G" \
-				    --nj 40 --use-vad false --chunk-size $chunk_size --period $period \
+				    --nj 32 --use-vad false --chunk-size $chunk_size --period $period \
 				    --min-chunk-size $min_chunk_size exp/extractor_c${num_components}_i${ivector_dim} \
-				    data/vandam2 exp/ivectors_vandam2
+				    data/vandam2_test exp/ivectors_vandam2
 
 fi
 

@@ -9,7 +9,7 @@ set -e
 src_dir=$1
 data_dir=$2
 
-if [ -d $data_dir/vandam_plda ];then
+if [ -d $data_dir/vandam_trainplda ];then
         rm -r $data_dir/vandam_trainplda
         rm -r $data_dir/vandam_calib
 fi
