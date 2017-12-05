@@ -34,13 +34,12 @@ utils/fix_data_dir.sh $data_dir/vandam_trainplda
 utils/filter_scp.pl --exclude $data_dir/vandam_trainplda/wav.scp $data_dir/vandam/wav.scp > $data_dir/vandam_calib/wav.scp
 utils/fix_data_dir.sh $data_dir/vandam_calib
 utils/filter_scp.pl $data_dir/vandam_trainplda/wav.scp $data_dir/vandam/stm > $data_dir/vandam_trainplda/stm
-#utils/filter_scp.pl $data_dir/vandam_trainplda/wav.scp $data_dir/vandam/rttm > $data_dir/vandam_trainplda/rttm
 utils/filter_scp.pl $data_dir/vandam_calib/wav.scp $data_dir/vandam/stm > $data_dir/vandam_calib/stm
 
 utils/filter_scp.pl $data_dir/vandam_trainplda/wav.scp $data_dir/vandam/rec2num > $data_dir/vandam_trainplda/rec2num
 utils/filter_scp.pl $data_dir/vandam_calib/wav.scp $data_dir/vandam/rec2num > $data_dir/vandam_calib/rec2num
 
-
+utils/filter_scp.pl --exclude -f 2 $data_dir/vandam_trainplda/wav.scp $data_dir/vandam/rttm | sort -k2,2 -k4n > local/rttm
 
 if [ -d $data_dir/vandam1 ];then
 	rm -r $data_dir/vandam1

@@ -8,27 +8,19 @@ mkdir -p $DATA/xml/
 PATH=$PATH:/home/$USER/bin
 
 echo "making stm file..."
-find $TALKBANK -name "*.cha" | \
-        xargs -n 1 -i ./local/cha2stm.sh {} ${DATA}/xml > $DATA/stm
-
-LAME=$(which lame)
-#LAME=/home/qkun/bin/lame
-SOX=$(which sox)
-
-find "${TALKBANK}" -name "*.cha" > $DATA/cha.list
-find "${TALKBANK}" -name "*.mp3" > $DATA/mp3.list
-
-#find "${TALKBANK}" -name "*.mp3" | xargs $LAME --decode --quiet  
+#find $TALKBANK -name "*.cha" | \
+#        xargs -n 1 -i ./local/cha2stm.sh {} ${DATA}/xml > $DATA/stm
 #
-#while IFS= read -r line
-#do
-#	/home/qkun/bin/lame --decode --quiet "$line"
-#done <"$DATA/mp3.list"
-
-
-#original one
-perl -ne 'chomp;  $b=`basename $_`; chomp $b; $b =~ s/\.mp3$//; print "$b '$LAME' --decode --quiet $_ - | sox - -t wav -r 16000 - |\n"' $DATA/mp3.list > $DATA/wav.scp
-
+#LAME=$(which lame)
+##LAME=/home/qkun/bin/lame
+#SOX=$(which sox)
+#
+#find "${TALKBANK}" -name "*.cha" > $DATA/cha.list
+#find "${TALKBANK}" -name "*.mp3" > $DATA/mp3.list
+#
+##original one
+#perl -ne 'chomp;  $b=`basename $_`; chomp $b; $b =~ s/\.mp3$//; print "$b '$LAME' --decode --quiet $_ - | sox - -t wav -r 16000 - |\n"' $DATA/mp3.list > $DATA/wav.scp
+#
 
 cat $DATA/stm | \
   perl -ne 'chomp;
@@ -38,7 +30,8 @@ cat $DATA/stm | \
             $spk = sprintf("%016s_%06s", $F[0], $F[1]);
             $u = sprintf("%s_%07d_%07d", $spk,  $s*1000, $e *1000);
             if (scalar @F > 5) {print "$u $F[6]\n"} else {print "$u SIL\n"}' > $DATA/text.tmp
-sort -n -k1,2 -k4,4 -t_ $DATA/text.tmp > $DATA/text
+
+sort -k1,2 -k4,4 -t_ $DATA/text.tmp > $DATA/text
 rm $DATA/text.tmp
 
 
@@ -50,7 +43,8 @@ cat $DATA/stm | \
             $spk = sprintf("%016s_%06s", $F[0], $F[1]);
 	    $u = sprintf("%s_%07d_%07d", $spk,  $s*1000, $e *1000);
             print "$u $F[0] $s $e \n"' > $DATA/segments.tmp
-sort -n -k1,2 -k4,4 -t_ $DATA/segments.tmp > $DATA/segments
+
+sort -k1,2 -k4,4 -t_ $DATA/segments.tmp > $DATA/segments
 rm $DATA/segments.tmp
 
 
@@ -62,7 +56,8 @@ cat $DATA/stm | \
             $spk = sprintf("%016s_%06s", $F[0], $F[1]);
 	    $u = sprintf("%s_%07d_%07d", $spk,  $s*1000, $e *1000);
             print "$u $spk \n"' > $DATA/utt2spk.tmp
-sort -n -k1,2 -k4,4 -t_ $DATA/utt2spk.tmp > $DATA/utt2spk
+
+sort -k1,2 -k4,4 -t_ $DATA/utt2spk.tmp > $DATA/utt2spk
 rm $DATA/utt2spk.tmp
 
 
