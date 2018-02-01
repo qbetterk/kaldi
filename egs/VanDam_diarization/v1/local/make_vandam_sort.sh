@@ -8,19 +8,19 @@ mkdir -p $DATA/xml/
 PATH=$PATH:/home/$USER/bin
 
 echo "making stm file..."
-#find $TALKBANK -name "*.cha" | \
-#        xargs -n 1 -i ./local/cha2stm.sh {} ${DATA}/xml > $DATA/stm
-#
-#LAME=$(which lame)
-##LAME=/home/qkun/bin/lame
-#SOX=$(which sox)
-#
-#find "${TALKBANK}" -name "*.cha" > $DATA/cha.list
-#find "${TALKBANK}" -name "*.mp3" > $DATA/mp3.list
-#
-##original one
-#perl -ne 'chomp;  $b=`basename $_`; chomp $b; $b =~ s/\.mp3$//; print "$b '$LAME' --decode --quiet $_ - | sox - -t wav -r 16000 - |\n"' $DATA/mp3.list > $DATA/wav.scp
-#
+find $TALKBANK -name "*.cha" | \
+        xargs -n 1 -i ./local/cha2stm.sh {} ${DATA}/xml > $DATA/stm
+
+LAME=$(which lame)
+#LAME=/home/qkun/bin/lame
+SOX=$(which sox)
+
+find "${TALKBANK}" -name "*.cha" > $DATA/cha.list
+find "${TALKBANK}" -name "*.mp3" > $DATA/mp3.list
+
+#original one
+perl -ne 'chomp;  $b=`basename $_`; chomp $b; $b =~ s/\.mp3$//; print "$b '$LAME' --decode --quiet $_ - | sox - -t wav -r 16000 - |\n"' $DATA/mp3.list > $DATA/wav.scp
+
 
 cat $DATA/stm | \
   perl -ne 'chomp;

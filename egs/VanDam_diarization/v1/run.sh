@@ -34,7 +34,7 @@ if [ $stage -le 0 ];then
 
     run_voxceleb.sh
 
-    run_mx6.sh
+#    run_mx6.sh
 
     cp -r data/voxceleb data/train
     #utils/combine_data.sh data/train data/mx6_mic data/voxceleb
@@ -62,8 +62,11 @@ if [ $stage -le 1 ];then
 #    done
 #
 #
-    local/split_vandam.sh data/vandam data/
+    local/split_vandam.sh data/vandam data
     local/make_vandam_test.sh data/vandam1 data/vandam2
+    
+#    sed -i '/CHI\|SIB\|BRO\|BAB\|KID\|SP01\|SI[0-9]/d' data/vandam_trainplda/segments
+#    utils/fix_data_dir.sh data/vandam_trainplda
 
     # The script local/make_vandam.sh splits vandam into two parts, called
     # vandam1 and vandam2.  Each partition is treated like a held-out
@@ -71,8 +74,6 @@ if [ $stage -le 1 ];then
     # diarization on the other part (and vice versa).
 
 fi
-
-
 
 if [ $stage -le 2 ];then
 
@@ -93,20 +94,21 @@ if [ $stage -le 3 ];then
 
 fi
 
-if [ $stage -le 5 ];then
-    # Reduce the amount of training data for the UBM.
-    utils/subset_data_dir.sh data/train 16000 data/train_16k
-    #utils/subset_data_dir.sh data/train 32000 data/train_32k
 
-    # Train UBM and i-vector extractor.
-    diarization/train_diag_ubm.sh --cmd "$train_cmd -l mem_free=20G,ram_free=20G" \
-				  --nj 40 --num-threads 8 --delta-order 1 data/train_16k $num_components \
-				  exp/diag_ubm_$num_components
-
-    diarization/train_full_ubm.sh --nj 40 --remove-low-count-gaussians false \
-				  --cmd "$train_cmd -l mem_free=25G,ram_free=25G" data/train \
-				  exp/diag_ubm_$num_components exp/full_ubm_$num_components
-fi
+#if [ $stage -le 5 ];then
+#    # Reduce the amount of training data for the UBM.
+#    utils/subset_data_dir.sh data/train 16000 data/train_16k
+#    #utils/subset_data_dir.sh data/train 32000 data/train_32k
+#
+#    # Train UBM and i-vector extractor.
+#    diarization/train_diag_ubm.sh --cmd "$train_cmd -l mem_free=20G,ram_free=20G" \
+#				  --nj 40 --num-threads 8 --delta-order 1 data/train_16k $num_components \
+#				  exp/diag_ubm_$num_components
+#
+#    diarization/train_full_ubm.sh --nj 40 --remove-low-count-gaussians false \
+#				  --cmd "$train_cmd -l mem_free=25G,ram_free=25G" data/train \
+#				  exp/diag_ubm_$num_components exp/full_ubm_$num_components
+#fi
 
 if [ $stage -le 6 ];then
     diarization/train_ivector_extractor.sh \
@@ -130,30 +132,32 @@ if [ $stage -le 7 ];then
 #
 
     diarization/extract_ivectors.sh --cmd "$train_cmd --mem 25G" \
-                                   --nj 40 --use-vad true --chunk-size 300 --period 300 \
+                                   --nj 40 --use-vad false --chunk-size 300 --period 300 \
                                    --min-chunk-size 5 exp/extractor_c${num_components}_i${ivector_dim} \
                                    data/vandam_trainplda exp/ivectors_vandam_trainplda
-
+    # fix spk2utt and utt2spk in exp/
+    #local/fix_spk2utt.sh exp/ivectors_vandam_trainplda 
+    local/filter_spk2utt.sh exp/ivectors_vandam_trainplda
 
 fi
+exit 0
 
 if [ $stage -le 8 ];then
 
     # Extract iVectors for the two partitions of vandam.
     diarization/extract_ivectors.sh --cmd "$train_cmd --mem 20G" \
-				    --nj 40 --use-vad false --chunk-size 150 --period 75 \
+				    --nj 32 --use-vad true --chunk-size 150 --period 75 \
 				    --min-chunk-size $min_chunk_size exp/extractor_c${num_components}_i${ivector_dim} \
 				    data/vandam1_test exp/ivectors_vandam1
 
     
     diarization/extract_ivectors.sh --cmd "$train_cmd --mem 20G" \
-				    --nj 32 --use-vad false --chunk-size 150 --period 75 \
+				    --nj 32 --use-vad true --chunk-size 150 --period 75 \
 				    --min-chunk-size $min_chunk_size exp/extractor_c${num_components}_i${ivector_dim} \
 				    data/vandam2_test exp/ivectors_vandam2
 
 fi
-
-
+exit 0
 if [ $stage -le 9 ];then
     
     # Train a PLDA model on vandam_trainplda, using vandam1 to whiten.
@@ -233,7 +237,7 @@ if [ $stage -le 12 ];then
                            exp/ivectors_vandam2/plda_scores exp/ivectors_vandam2/plda_scores
     fi
 
-    fi [ $condition = "num" ];then
+    if [ $condition = "num" ];then
         # using oracle speaker number
         diarization/cluster.sh --cmd "$train_cmd --mem 4G" \
                            --nj 20 --utt2num data/vandam/rec2num \
@@ -253,48 +257,63 @@ if [ $stage -le 13 ];then
 	| perl local/md-eval.pl -1 -c 0.25 -r local/rttm -s - 2> /dev/null | tee
 
     cat exp/ivectors_vandam1/plda_scores/rttm exp/ivectors_vandam2/plda_scores/rttm \
-        | perl local/md-eval.pl -1 -c 0.25 -r local/rttm -s - 2> /dev/null | tee > result/result-`date +%Y-%m-%d`
+        | perl local/md-eval.pl -1 -c 0.25 -r local/rttm -s - 2> /dev/null | tee > result/result-`date +%Y-%m-%d`-${condition}
 
 fi
 
-################################  for the test  ############################
-
-# local/make_vandam_test.sh data/vandam_trianplda
+#################################  for the test  ############################
+#
 #
 #if [ $stage -le 20 ];then
 #
-#    for name in vandam_trainplda_test; do
-#        steps/make_mfcc.sh --mfcc-config conf/mfcc.conf --nj 40 --cmd "$train_cmd" \
+#    for name in vandam1_test vandam2_test; do
+#        utils/fix_data_dir.sh data/$name
+#	steps/make_mfcc.sh --mfcc-config conf/mfcc.conf --nj 40 --cmd "$train_cmd" \
 #                           data/$name exp/make_mfcc $mfccdir
 #        utils/fix_data_dir.sh data/$name
 #    done
 #
-#    for name in vandam_trainplda_test; do
+#    for name in vandam1_test vandam2_test; do
 #        sid/compute_vad_decision.sh --nj 20 --cmd "$train_cmd" \
 #                                    data/$name exp/make_vad $vaddir
 #        utils/fix_data_dir.sh data/$name
 #    done
-#
-#    diarization/extract_ivectors.sh --cmd "$train_cmd --mem 20G" \
-#                                    --nj 32 --use-vad false --chunk-size $chunk_size --period $period \
-#                                    --min-chunk-size $min_chunk_size exp/extractor_c${num_components}_i${ivector_dim} \
-#                                    data/vandam_trainplda_test exp/ivectors_vandam_trainplda_test
-#
-#    diarization/score_plda.sh --cmd "$train_cmd --mem 4G" \
-#                              --nj 20 exp/ivectors_vandam2 exp/ivectors_vandam_trainplda_test \
-#                              exp/ivectors_vandam_trainplda_test/plda_scores
+#   
 #fi
 #
 #if [ $stage -le 21 ];then
-##    diarization/cluster.sh --cmd "$train_cmd --mem 4G" \
-##                           --nj 20 --utt2num data/vandam/rec2num \
-##                           exp/ivectors_vandam_trainplda_test/plda_scores exp/ivectors_vandam_trainplda_test/plda_scores
-##
+#
+#    diarization/extract_ivectors.sh --cmd "$train_cmd --mem 20G" \
+#                                    --nj 32 --use-vad false --chunk-size 150 --period 75 \
+#                                    --min-chunk-size $min_chunk_size exp/extractor_c${num_components}_i${ivector_dim} \
+#                                    data/vandam1_test exp/ivectors_vandam1
+#
+#    diarization/extract_ivectors.sh --cmd "$train_cmd --mem 20G" \
+#                                    --nj 32 --use-vad false --chunk-size 150 --period 75 \
+#                                    --min-chunk-size $min_chunk_size exp/extractor_c${num_components}_i${ivector_dim} \
+#                                    data/vandam2_test exp/ivectors_vandam2
+#
+#    diarization/score_plda.sh --cmd "$train_cmd --mem 4G" \
+#                              --nj 20 exp/ivectors_vandam2 exp/ivectors_vandam1 \
+#                              exp/ivectors_vandam1/plda_scores
+#
+#
+#    diarization/score_plda.sh --cmd "$train_cmd --mem 4G" \
+#                              --nj 20 exp/ivectors_vandam1 exp/ivectors_vandam2 \
+#                              exp/ivectors_vandam2/plda_scores
+#fi
+#
+#if [ $stage -le 22 ];then
+#    diarization/cluster.sh --cmd "$train_cmd --mem 4G" \
+#                           --nj 20 --utt2num data/vandam/rec2num \
+#                           exp/ivectors_vandam1/plda_scores exp/ivectors_vandam1/plda_scores
+#
 #     diarization/cluster.sh --cmd "$train_cmd --mem 4G" \
 #                            --nj 20 --threshold $threshold \
-#                            exp/ivectors_vandam_trainplda_test/plda_scores exp/ivectors_vandam_trainplda_test/plda_scores
+#                           exp/ivectors_vandam2/plda_scores exp/ivectors_vandam2/plda_scores
 #
-#    cat exp/ivectors_vandam_trainplda_test/plda_scores/rttm \
-#        | perl local/md-eval.pl -1 -c 0.25 -r data/vandam_trainplda_test/rttm -s - 2> /dev/null | tee
+#    cat exp/ivectors_vandam1/plda_scores/rttm exp/ivectors_vandam2/plda_scores/rttm \
+#        | perl local/md-eval.pl -1 -c 0.25 -r local/rttm -s - 2> /dev/null | tee
+#
 #
 #fi

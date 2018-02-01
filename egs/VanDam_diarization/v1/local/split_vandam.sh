@@ -9,10 +9,11 @@ set -e
 src_dir=$1
 data_dir=$2
 
-if [ -d $data_dir/vandam_trainplda ];then
-        rm -r $data_dir/vandam_trainplda
-        rm -r $data_dir/vandam_calib
-fi
+for name in trainplda calib; do
+  if [ -d $data_dir/vandam_trainplda ];then
+    rm -r $data_dir/vandam_${name}
+  fi
+done
 
 mkdir -p $data_dir/vandam_trainplda
 mkdir -p $data_dir/vandam_calib
