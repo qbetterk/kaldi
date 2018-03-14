@@ -131,7 +131,7 @@ if [ $stage -le 7 ];then
 #    				    data/voxceleb exp/ivectors_voxceleb
 #
 
-    diarization/extract_ivectors.sh --cmd "$train_cmd --mem 25G" \
+    diarization/extract_ivectors_vad.sh --cmd "$train_cmd --mem 25G" \
                                    --nj 40 --use-vad false --chunk-size 300 --period 300 \
                                    --min-chunk-size 5 exp/extractor_c${num_components}_i${ivector_dim} \
                                    data/vandam_trainplda exp/ivectors_vandam_trainplda
@@ -140,24 +140,34 @@ if [ $stage -le 7 ];then
     local/filter_spk2utt.sh exp/ivectors_vandam_trainplda
 
 fi
-exit 0
 
 if [ $stage -le 8 ];then
 
     # Extract iVectors for the two partitions of vandam.
-    diarization/extract_ivectors.sh --cmd "$train_cmd --mem 20G" \
-				    --nj 32 --use-vad true --chunk-size 150 --period 75 \
+    diarization/extract_ivectors_vad.sh --cmd "$train_cmd --mem 20G" \
+				    --nj 32 --use-vad false --chunk-size 150 --period 75 \
 				    --min-chunk-size $min_chunk_size exp/extractor_c${num_components}_i${ivector_dim} \
 				    data/vandam1_test exp/ivectors_vandam1
 
     
-    diarization/extract_ivectors.sh --cmd "$train_cmd --mem 20G" \
-				    --nj 32 --use-vad true --chunk-size 150 --period 75 \
+    diarization/extract_ivectors_vad.sh --cmd "$train_cmd --mem 20G" \
+				    --nj 32 --use-vad false --chunk-size 150 --period 75 \
 				    --min-chunk-size $min_chunk_size exp/extractor_c${num_components}_i${ivector_dim} \
 				    data/vandam2_test exp/ivectors_vandam2
 
 fi
+
+#if [ $stage -le 9 ];then
+#
+#    # Extract iVectors for the two partitions of vandam.
+#    diarization/extract_ivectors.sh --cmd "$train_cmd --mem 20G" \
+#                                    --nj 32 --use-vad false --chunk-size 150 --period 75 \
+#                                    --min-chunk-size $min_chunk_size exp/extractor_c${num_components}_i${ivector_dim} \
+#                                    data/vandam1_test exp/ivectors_vandam1_vad
+#fi
+
 exit 0
+
 if [ $stage -le 9 ];then
     
     # Train a PLDA model on vandam_trainplda, using vandam1 to whiten.
