@@ -158,6 +158,16 @@ inline void cuda_add_mat_blocks(dim3 Gr, dim3 Bl, float alpha, const float *src,
   cudaF_add_mat_blocks(Gr, Bl, alpha, src, num_row_blocks, num_col_blocks, dst,
                        d, src_stride, A_trans);
 }
+inline void cuda_add_mat_repeated(dim3 Gr, dim3 Bl, double alpha,
+                                  const double *src, MatrixDim src_dim,
+                                  double *dst, MatrixDim dst_dim) {
+  cudaD_add_mat_repeated(Gr, Bl, alpha, src, src_dim, dst, dst_dim);
+}
+inline void cuda_add_mat_repeated(dim3 Gr, dim3 Bl, float alpha,
+                                  const float *src, MatrixDim src_dim,
+                                  float *dst, MatrixDim dst_dim) {
+  cudaF_add_mat_repeated(Gr, Bl, alpha, src, src_dim, dst, dst_dim);
+}
 inline void cuda_max_mat_blocks(dim3 Gr, dim3 Bl, double alpha,
                                 const double *src, int32_cuda num_row_blocks,
                                 int32_cuda num_col_blocks, double *dst,
@@ -172,15 +182,15 @@ inline void cuda_max_mat_blocks(dim3 Gr, dim3 Bl, float alpha, const float *src,
   cudaF_max_mat_blocks(Gr, Bl, alpha, src, num_row_blocks, num_col_blocks, dst,
                        d, src_stride, A_trans);
 }
-inline void cuda_add_mat_repeated(dim3 Gr, dim3 Bl, double alpha,
+inline void cuda_max_mat_repeated(dim3 Gr, dim3 Bl, double alpha,
                                   const double *src, MatrixDim src_dim,
                                   double *dst, MatrixDim dst_dim) {
-  cudaD_add_mat_repeated(Gr, Bl, alpha, src, src_dim, dst, dst_dim);
+  cudaD_max_mat_repeated(Gr, Bl, alpha, src, src_dim, dst, dst_dim);
 }
-inline void cuda_add_mat_repeated(dim3 Gr, dim3 Bl, float alpha,
+inline void cuda_max_mat_repeated(dim3 Gr, dim3 Bl, float alpha,
                                   const float *src, MatrixDim src_dim,
                                   float *dst, MatrixDim dst_dim) {
-  cudaF_add_mat_repeated(Gr, Bl, alpha, src, src_dim, dst, dst_dim);
+  cudaF_max_mat_repeated(Gr, Bl, alpha, src, src_dim, dst, dst_dim);
 }
 inline void cuda_add_mat_diag_vec(dim3 Gr, dim3 Bl, double alpha, double *mat,
                                   MatrixDim mat_dim, const double *mat2,

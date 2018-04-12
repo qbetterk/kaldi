@@ -1237,25 +1237,25 @@ void CuMatrixBase<Real>::MaxMatBlocks(Real alpha, const CuMatrixBase<Real> &A,
     //     }
     //   }
     // }
-//   } else {
-//     // This is the "broadcasting" version of MaxMatBlocks, where
-//     // *this is larger than src.
-//     if (transA != kNoTrans)
-//       KALDI_ERR << "Transposed operation not supported currently.";
-//     if (!(num_rows_ % A.NumRows() == 0 && num_cols_ % A.NumCols() == 0))
-//       KALDI_ERR << "Invalid sizes of arguments";
-// #if HAVE_CUDA == 1
-//     if (CuDevice::Instantiate().Enabled()) {
-//       CuTimer tim;
-//       dim3 dimGrid, dimBlock;
-//       GetBlockSizesForSimpleMatrixOperation(NumRows(), NumCols(),
-//                                             &dimGrid, &dimBlock);
-//       cuda_add_mat_repeated(dimGrid, dimBlock, alpha,
-//                             A.data_, A.Dim(), data_, Dim());
-//       CU_SAFE_CALL(cudaGetLastError());
-//       CuDevice::Instantiate().AccuProfile(__func__, tim);
-//     } else
-// #endif
+  } else {
+    // This is the "broadcasting" version of MaxMatBlocks, where
+    // *this is larger than src.
+    if (transA != kNoTrans)
+      KALDI_ERR << "Transposed operation not supported currently.";
+    if (!(num_rows_ % A.NumRows() == 0 && num_cols_ % A.NumCols() == 0))
+      KALDI_ERR << "Invalid sizes of arguments";
+#if HAVE_CUDA == 1
+    if (CuDevice::Instantiate().Enabled()) {
+      CuTimer tim;
+      dim3 dimGrid, dimBlock;
+      GetBlockSizesForSimpleMatrixOperation(NumRows(), NumCols(),
+                                            &dimGrid, &dimBlock);
+      cuda_max_mat_repeated(dimGrid, dimBlock, alpha,
+                            A.data_, A.Dim(), data_, Dim());
+      CU_SAFE_CALL(cudaGetLastError());
+      CuDevice::Instantiate().AccuProfile(__func__, tim);
+    } //else
+#endif
 //     {
 //       const MatrixBase<Real> &src_mat = A.Mat(),
 //           &this_mat = this->Mat();
