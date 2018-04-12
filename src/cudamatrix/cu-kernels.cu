@@ -775,6 +775,46 @@ static void _add_mat_blocks_trans(Real alpha, const Real* src,
 
 template<typename Real>
 __global__
+static void _max_mat_blocks(Real alpha, const Real* src,
+                            int32_cuda num_row_blocks,
+                            int32_cuda num_col_blocks, Real* dst, MatrixDim d,
+                            int src_stride) {
+  int32_cuda i = blockIdx.x * blockDim.x + threadIdx.x;
+  int32_cuda j = blockIdx.y * blockDim.y + threadIdx.y;
+  int32_cuda index = i + j * d.stride;
+  int32_cuda index_src = i + j * src_stride;
+  if (i < d.cols && j < d.rows)
+    for (int32_cuda p = 0; p < num_row_blocks; p++) {
+      for (int32_cuda q = 0; q < num_col_blocks; q++) {
+        dst[index] = fmax(
+            src[index_src + p * src_stride * d.rows + q * d.cols],
+            dst[index]);
+      }
+    }
+}
+
+template<typename Real>
+__global__
+static void _max_mat_blocks_trans(Real alpha, const Real* src,
+                                  int32_cuda num_row_blocks,
+                                  int32_cuda num_col_blocks, Real* dst,
+                                  MatrixDim d, int src_stride) {
+  int32_cuda i = blockIdx.x * blockDim.x + threadIdx.x;
+  int32_cuda j = blockIdx.y * blockDim.y + threadIdx.y;
+  int32_cuda index = i + j * d.stride;
+  int32_cuda index_src = j + i * src_stride;
+  if (i < d.cols && j < d.rows)
+    for (int32_cuda p = 0; p < num_row_blocks; p++) {
+      for (int32_cuda q = 0; q < num_col_blocks; q++) {
+        dst[index] = fmax(
+            src[index_src + p * src_stride * d.cols + q * d.rows],
+            dst[index]);
+      }
+    }
+}
+
+template<typename Real>
+__global__
 static void _set_mat_mat_div_mat(const Real* A, const Real* B, const Real* C,
                                  Real* dst, MatrixDim d, int stride_a,
                                  int stride_b, int stride_c) {
@@ -3952,6 +3992,19 @@ void cudaF_add_mat_blocks(dim3 Gr, dim3 Bl, float alpha, const float* src,
   }
 }
 
+void cudaF_max_mat_blocks(dim3 Gr, dim3 Bl, float alpha, const float* src,
+                          int32_cuda num_row_blocks, int32_cuda num_col_blocks,
+                          float* dst, MatrixDim d, int src_stride,
+                          int A_trans) {
+  if (A_trans) {
+    _max_mat_blocks_trans<<<Gr,Bl>>>(alpha, src, num_row_blocks, num_col_blocks,
+        dst, d, src_stride);
+  } else {
+    _max_mat_blocks<<<Gr,Bl>>>(alpha, src, num_row_blocks, num_col_blocks, dst,
+        d, src_stride);
+  }
+}
+
 void cudaF_add_mat_repeated(dim3 Gr, dim3 Bl, float alpha, const float* src,
                             MatrixDim src_dim, float *dst, MatrixDim dst_dim) {
   _add_mat_repeated<<<Gr,Bl>>>(alpha, src, src_dim, dst, dst_dim);
@@ -4652,6 +4705,19 @@ void cudaD_add_mat_blocks(dim3 Gr, dim3 Bl, double alpha, const double* src,
         dst, d, src_stride);
   } else {
     _add_mat_blocks<<<Gr,Bl>>>(alpha, src, num_row_blocks, num_col_blocks, dst,
+        d, src_stride);
+  }
+}
+
+void cudaD_max_mat_blocks(dim3 Gr, dim3 Bl, double alpha, const double* src,
+                          int32_cuda num_row_blocks, int32_cuda num_col_blocks,
+                          double* dst, MatrixDim d, int src_stride,
+                          int A_trans) {
+  if (A_trans) {
+    _max_mat_blocks_trans<<<Gr,Bl>>>(alpha, src, num_row_blocks, num_col_blocks,
+        dst, d, src_stride);
+  } else {
+    _max_mat_blocks<<<Gr,Bl>>>(alpha, src, num_row_blocks, num_col_blocks, dst,
         d, src_stride);
   }
 }

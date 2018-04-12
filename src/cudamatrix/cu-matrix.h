@@ -509,6 +509,9 @@ class CuMatrixBase {
   void AddMatBlocks(Real alpha, const CuMatrixBase<Real> &A,
                     MatrixTransposeType trans = kNoTrans);
 
+  void MaxMatBlocks(Real alpha, const CuMatrixBase<Real> &A,
+                    MatrixTransposeType trans = kNoTrans);
+
   /// (for each column c of *this), c = alpha * col + beta * c
   void AddVecToCols(Real alpha, const CuVectorBase<Real> &col, Real beta = 1.0);
   /// (for each row r of *this), r = alpha * row + beta * r
