@@ -5913,14 +5913,27 @@ void* MaxPoolingOverBlock::Propagate(const ComponentPrecomputedIndexes *indexes,
 void MaxPoolingOverBlock::Backprop(
     const std::string &debug_info,
     const ComponentPrecomputedIndexes *indexes,
-    const CuMatrixBase<BaseFloat> &, //in_value
-    const CuMatrixBase<BaseFloat> &, // out_value,
+    const CuMatrixBase<BaseFloat> &in_value, //in_value
+    const CuMatrixBase<BaseFloat> &out_value, // out_value,
     const CuMatrixBase<BaseFloat> &out_deriv,
     void *memo,
     Component *to_update,
     CuMatrixBase<BaseFloat> *in_deriv) const {
-  if (in_deriv) {
-    in_deriv->MaxMatBlocks(out_deriv, kNoTrans);
+  // if (in_deriv) {
+  //   in_deriv->MaxMatBlocks(out_deriv, kNoTrans);
+  // }
+  if (!in_deriv)
+    return;
+
+  int32 num_pools = input_dim_;
+  int32 pool_size = output_dim_ / input_dim_;
+
+  for (int32 q = 0; q < pool_size; q++) {
+    // zero-out mask
+    CuMatrix<BaseFloat> mask;
+    out_value.EqualElementMask(in_value.ColRange(q * num_pools, num_pools), &mask);
+    mask.MulElements(out_deriv);
+    in_deriv.ColRange(q * num_pools, num_pools).CopyFromMat(mask);
   }
 }
 

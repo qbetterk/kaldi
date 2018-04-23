@@ -1249,8 +1249,8 @@ class MaxPoolingOverBlock: public Component {
                           CuMatrixBase<BaseFloat> *out) const;
   virtual void Backprop(const std::string &debug_info,
                         const ComponentPrecomputedIndexes *indexes,
-                        const CuMatrixBase<BaseFloat> &, //in_value
-                        const CuMatrixBase<BaseFloat> &, // out_value,
+                        const CuMatrixBase<BaseFloat> &in_value, //in_value
+                        const CuMatrixBase<BaseFloat> &out_value, // out_value,
                         const CuMatrixBase<BaseFloat> &out_deriv,
                         void *memo,
                         Component *to_update,
