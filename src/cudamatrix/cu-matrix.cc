@@ -1189,7 +1189,7 @@ void CuMatrixBase<Real>::AddMatBlocks(Real alpha, const CuMatrixBase<Real> &A,
 
 
 template<typename Real>
-void CuMatrixBase<Real>::MaxMatBlocks(Real alpha, const CuMatrixBase<Real> &A,
+void CuMatrixBase<Real>::MaxMatBlocks(const CuMatrixBase<Real> &A,
                                       MatrixTransposeType transA) {
   if (num_rows_ == 0 || num_cols_ == 0) return;
 
@@ -1213,7 +1213,7 @@ void CuMatrixBase<Real>::MaxMatBlocks(Real alpha, const CuMatrixBase<Real> &A,
       dim3 dimGrid, dimBlock;
       GetBlockSizesForSimpleMatrixOperation(NumRows(), NumCols(),
                                             &dimGrid, &dimBlock);
-      cuda_max_mat_blocks(dimGrid, dimBlock, alpha, A.data_, num_row_blocks,
+      cuda_max_mat_blocks(dimGrid, dimBlock, A.data_, num_row_blocks,
                           num_col_blocks, data_, Dim(), A.Stride(),
                           (transA == kTrans ? 1 : 0));
       CU_SAFE_CALL(cudaGetLastError());
@@ -1250,7 +1250,7 @@ void CuMatrixBase<Real>::MaxMatBlocks(Real alpha, const CuMatrixBase<Real> &A,
       dim3 dimGrid, dimBlock;
       GetBlockSizesForSimpleMatrixOperation(NumRows(), NumCols(),
                                             &dimGrid, &dimBlock);
-      cuda_max_mat_repeated(dimGrid, dimBlock, alpha,
+      cuda_max_mat_repeated(dimGrid, dimBlock,
                             A.data_, A.Dim(), data_, Dim());
       CU_SAFE_CALL(cudaGetLastError());
       CuDevice::Instantiate().AccuProfile(__func__, tim);

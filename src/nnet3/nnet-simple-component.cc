@@ -5861,11 +5861,9 @@ void SumBlockComponent::Backprop(
 }
 
 MaxPoolingOverBlock::MaxPoolingOverBlock(const MaxPoolingOverBlock &other):
-    input_dim_(other.input_dim_), output_dim_(other.output_dim_),
-    scale_(other.scale_) { }
+    input_dim_(other.input_dim_), output_dim_(other.output_dim_) { }
 
 void MaxPoolingOverBlock::InitFromConfig(ConfigLine *cfl) {
-  scale_ = 1.0;
   bool ok = cfl->GetValue("input-dim", &input_dim_) &&
       cfl->GetValue("output-dim", &output_dim_);
   if (!ok)
@@ -5873,7 +5871,6 @@ void MaxPoolingOverBlock::InitFromConfig(ConfigLine *cfl) {
   if (input_dim_ <= 0 || input_dim_ % output_dim_ != 0)
     KALDI_ERR << "Invalid values input-dim=" << input_dim_
               << " output-dim=" << output_dim_;
-  cfl->GetValue("scale", &scale_);
   if (cfl->HasUnusedValues())
     KALDI_ERR << "Could not process these elements in initializer: "
               << cfl->UnusedValues();
@@ -5884,8 +5881,6 @@ void MaxPoolingOverBlock::Read(std::istream &is, bool binary) {
   ReadBasicType(is, binary, &input_dim_);
   ExpectToken(is, binary, "<OutputDim>");
   ReadBasicType(is, binary, &output_dim_);
-  ExpectToken(is, binary, "<Scale>");
-  ReadBasicType(is, binary, &scale_);
   ExpectToken(is, binary, "</MaxPoolingOverBlock>");
 }
 
@@ -5895,16 +5890,13 @@ void MaxPoolingOverBlock::Write(std::ostream &os, bool binary) const {
   WriteBasicType(os, binary, input_dim_);
   WriteToken(os, binary, "<OutputDim>");
   WriteBasicType(os, binary, output_dim_);
-  WriteToken(os, binary, "<Scale>");
-  WriteBasicType(os, binary, scale_);
   WriteToken(os, binary, "</MaxPoolingOverBlock>");
 }
 
 std::string MaxPoolingOverBlock::Info() const {
   std::ostringstream stream;
   stream << Type() << ", input-dim=" << input_dim_
-         << ", output-dim=" << output_dim_
-         << ", scale=" << scale_;
+         << ", output-dim=" << output_dim_;
   return stream.str();
 }
 
@@ -5914,7 +5906,7 @@ void* MaxPoolingOverBlock::Propagate(const ComponentPrecomputedIndexes *indexes,
   KALDI_ASSERT(out->NumRows() == in.NumRows() &&
                out->NumCols() == output_dim_ &&
                in.NumCols() == input_dim_);
-  out->MaxMatBlocks(scale_, in, kNoTrans);
+  out->MaxMatBlocks(in, kNoTrans);
   return NULL;
 }
 
@@ -5928,7 +5920,7 @@ void MaxPoolingOverBlock::Backprop(
     Component *to_update,
     CuMatrixBase<BaseFloat> *in_deriv) const {
   if (in_deriv) {
-    in_deriv->MaxMatBlocks(scale_, out_deriv, kNoTrans);
+    in_deriv->MaxMatBlocks(out_deriv, kNoTrans);
   }
 }
 

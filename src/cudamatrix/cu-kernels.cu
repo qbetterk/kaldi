@@ -775,7 +775,7 @@ static void _add_mat_blocks_trans(Real alpha, const Real* src,
 
 template<typename Real>
 __global__
-static void _max_mat_blocks(Real alpha, const Real* src,
+static void _max_mat_blocks(const Real* src,
                             int32_cuda num_row_blocks,
                             int32_cuda num_col_blocks, Real* dst, MatrixDim d,
                             int src_stride) {
@@ -795,7 +795,7 @@ static void _max_mat_blocks(Real alpha, const Real* src,
 
 template<typename Real>
 __global__
-static void _max_mat_blocks_trans(Real alpha, const Real* src,
+static void _max_mat_blocks_trans(const Real* src,
                                   int32_cuda num_row_blocks,
                                   int32_cuda num_col_blocks, Real* dst,
                                   MatrixDim d, int src_stride) {
@@ -815,7 +815,7 @@ static void _max_mat_blocks_trans(Real alpha, const Real* src,
 
 template<typename Real>
 __global__
-static void _max_mat_repeated(Real alpha, const Real* src,
+static void _max_mat_repeated(const Real* src,
                               MatrixDim src_dim, Real* dst,
                               MatrixDim dst_dim) {
   int32_cuda i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -825,7 +825,7 @@ static void _max_mat_repeated(Real alpha, const Real* src,
       dst_index = i + j * dst_dim.stride,
       src_index = src_i + src_j * src_dim.stride;
   if (i < dst_dim.cols && j < dst_dim.rows)
-    dst[dst_index] += alpha * src[src_index];
+    dst[dst_index] += src[src_index];
 }
 
 template<typename Real>
@@ -4007,15 +4007,15 @@ void cudaF_add_mat_blocks(dim3 Gr, dim3 Bl, float alpha, const float* src,
   }
 }
 
-void cudaF_max_mat_blocks(dim3 Gr, dim3 Bl, float alpha, const float* src,
+void cudaF_max_mat_blocks(dim3 Gr, dim3 Bl, const float* src,
                           int32_cuda num_row_blocks, int32_cuda num_col_blocks,
                           float* dst, MatrixDim d, int src_stride,
                           int A_trans) {
   if (A_trans) {
-    _max_mat_blocks_trans<<<Gr,Bl>>>(alpha, src, num_row_blocks, num_col_blocks,
+    _max_mat_blocks_trans<<<Gr,Bl>>>(src, num_row_blocks, num_col_blocks,
         dst, d, src_stride);
   } else {
-    _max_mat_blocks<<<Gr,Bl>>>(alpha, src, num_row_blocks, num_col_blocks, dst,
+    _max_mat_blocks<<<Gr,Bl>>>(src, num_row_blocks, num_col_blocks, dst,
         d, src_stride);
   }
 }
@@ -4025,9 +4025,9 @@ void cudaF_add_mat_repeated(dim3 Gr, dim3 Bl, float alpha, const float* src,
   _add_mat_repeated<<<Gr,Bl>>>(alpha, src, src_dim, dst, dst_dim);
 }
 
-void cudaF_max_mat_repeated(dim3 Gr, dim3 Bl, float alpha, const float* src,
+void cudaF_max_mat_repeated(dim3 Gr, dim3 Bl, const float* src,
                             MatrixDim src_dim, float *dst, MatrixDim dst_dim) {
-  _max_mat_repeated<<<Gr,Bl>>>(alpha, src, src_dim, dst, dst_dim);
+  _max_mat_repeated<<<Gr,Bl>>>(src, src_dim, dst, dst_dim);
 }
 
 void cudaF_set_mat_mat_div_mat(dim3 Gr, dim3 Bl, const float *A, const float *B,
@@ -4728,15 +4728,15 @@ void cudaD_add_mat_blocks(dim3 Gr, dim3 Bl, double alpha, const double* src,
   }
 }
 
-void cudaD_max_mat_blocks(dim3 Gr, dim3 Bl, double alpha, const double* src,
+void cudaD_max_mat_blocks(dim3 Gr, dim3 Bl, const double* src,
                           int32_cuda num_row_blocks, int32_cuda num_col_blocks,
                           double* dst, MatrixDim d, int src_stride,
                           int A_trans) {
   if (A_trans) {
-    _max_mat_blocks_trans<<<Gr,Bl>>>(alpha, src, num_row_blocks, num_col_blocks,
+    _max_mat_blocks_trans<<<Gr,Bl>>>(src, num_row_blocks, num_col_blocks,
         dst, d, src_stride);
   } else {
-    _max_mat_blocks<<<Gr,Bl>>>(alpha, src, num_row_blocks, num_col_blocks, dst,
+    _max_mat_blocks<<<Gr,Bl>>>(src, num_row_blocks, num_col_blocks, dst,
         d, src_stride);
   }
 }
@@ -4746,9 +4746,9 @@ void cudaD_add_mat_repeated(dim3 Gr, dim3 Bl, double alpha, const double* src,
   _add_mat_repeated<<<Gr,Bl>>>(alpha, src, src_dim, dst, dst_dim);
 }
 
-void cudaD_max_mat_repeated(dim3 Gr, dim3 Bl, double alpha, const double* src,
+void cudaD_max_mat_repeated(dim3 Gr, dim3 Bl, const double* src,
                             MatrixDim src_dim, double *dst, MatrixDim dst_dim) {
-  _max_mat_repeated<<<Gr,Bl>>>(alpha, src, src_dim, dst, dst_dim);
+  _max_mat_repeated<<<Gr,Bl>>>(src, src_dim, dst, dst_dim);
 }
 
 void cudaD_set_mat_mat_div_mat(dim3 Gr, dim3 Bl, const double *A,

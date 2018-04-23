@@ -509,7 +509,23 @@ class CuMatrixBase {
   void AddMatBlocks(Real alpha, const CuMatrixBase<Real> &A,
                     MatrixTransposeType trans = kNoTrans);
 
-  void MaxMatBlocks(Real alpha, const CuMatrixBase<Real> &A,
+  /// This function does *this = max(*this, src). similar with AddMatBlocks,
+  /// it supports cases where *this and src have different dimension.  
+  /// There are two allowed cases:
+  ///
+  ///  (1) *this is larger than src; this case is probably for backpropagation.
+  ///       In this case, we do a broadcasting operation.  *this must
+  ///       have NumRows() == a * src.NumRows() and NumCols() == b *
+  ///       src.NumCols() for integer a >= 1, b >= 1.  *this will be treated as
+  ///       being made up of of blocks with the same size as src, and to each
+  ///       block we'll add src.  This case does not support trans == kTrans.
+  ///
+  ///  (2) *this is smaller than src; we select the maximum.  src.NumRows() must 
+  ///      == a * this->NumRows(), and src.NumCols() must == b * this->NumCols(), 
+  ///      for a >= 1, b >= 1.  In this case, src will be treated as being made 
+  ///      up of blocks with the same size as *this, and to *this we will select
+  ///      max value over all of those blocks.
+  void MaxMatBlocks(const CuMatrixBase<Real> &A,
                     MatrixTransposeType trans = kNoTrans);
 
   /// (for each column c of *this), c = alpha * col + beta * c

@@ -168,26 +168,26 @@ inline void cuda_add_mat_repeated(dim3 Gr, dim3 Bl, float alpha,
                                   float *dst, MatrixDim dst_dim) {
   cudaF_add_mat_repeated(Gr, Bl, alpha, src, src_dim, dst, dst_dim);
 }
-inline void cuda_max_mat_blocks(dim3 Gr, dim3 Bl, double alpha,
+inline void cuda_max_mat_blocks(dim3 Gr, dim3 Bl,
                                 const double *src, int32_cuda num_row_blocks,
                                 int32_cuda num_col_blocks, double *dst,
                                 MatrixDim d, int src_stride, int A_trans) {
   cudaD_max_mat_blocks(Gr, Bl, alpha, src, num_row_blocks, num_col_blocks, dst,
                        d, src_stride, A_trans);
 }
-inline void cuda_max_mat_blocks(dim3 Gr, dim3 Bl, float alpha, const float *src,
+inline void cuda_max_mat_blocks(dim3 Gr, dim3 Bl, const float *src,
                                 int32_cuda num_row_blocks,
                                 int32_cuda num_col_blocks, float *dst,
                                 MatrixDim d, int src_stride, int A_trans) {
   cudaF_max_mat_blocks(Gr, Bl, alpha, src, num_row_blocks, num_col_blocks, dst,
                        d, src_stride, A_trans);
 }
-inline void cuda_max_mat_repeated(dim3 Gr, dim3 Bl, double alpha,
+inline void cuda_max_mat_repeated(dim3 Gr, dim3 Bl,
                                   const double *src, MatrixDim src_dim,
                                   double *dst, MatrixDim dst_dim) {
   cudaD_max_mat_repeated(Gr, Bl, alpha, src, src_dim, dst, dst_dim);
 }
-inline void cuda_max_mat_repeated(dim3 Gr, dim3 Bl, float alpha,
+inline void cuda_max_mat_repeated(dim3 Gr, dim3 Bl,
                                   const float *src, MatrixDim src_dim,
                                   float *dst, MatrixDim dst_dim) {
   cudaF_max_mat_repeated(Gr, Bl, alpha, src, src_dim, dst, dst_dim);

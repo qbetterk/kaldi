@@ -1228,7 +1228,6 @@ class SumBlockComponent: public Component {
      Accepted values on its config-file line are:
         input-dim  The input dimension.  Required.
         output-dim  The block dimension.  Required.  Must divide input-dim.
-        scale      A scaling factor on the output.  Defaults to 1.0.
  */
 class MaxPoolingOverBlock: public Component {
  public:
@@ -1259,7 +1258,6 @@ class MaxPoolingOverBlock: public Component {
  private:
   int32 input_dim_;
   int32 output_dim_;
-  BaseFloat scale_;
   MaxPoolingOverBlock &operator = (const MaxPoolingOverBlock &other); // Disallow.
 };
 
