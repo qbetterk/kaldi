@@ -1220,48 +1220,6 @@ class SumBlockComponent: public Component {
   SumBlockComponent &operator = (const SumBlockComponent &other); // Disallow.
 };
 
-/**  MaxPoolingOverBlock gets maximum value over blocks of its input: for instance, if
-     you create one with the config "input-dim=400 output-dim=100",
-     its output will be the maximum value over the 4 100-dimensional blocks of
-     the input.
-
-     Accepted values on its config-file line are:
-        input-dim  The input dimension.  Required.
-        output-dim  The block dimension.  Required.  Must divide input-dim.
- */
-class MaxPoolingOverBlock: public Component {
- public:
-  explicit MaxPoolingOverBlock(const MaxPoolingOverBlock &other);
-  MaxPoolingOverBlock() { }
-  virtual std::string Type() const { return "MaxPoolingOverBlock"; }
-  virtual int32 Properties() const {
-    return kSimpleComponent|kPropagateAdds|kBackpropAdds;
-  }
-  virtual void (ConfigLine *cfl);
-  virtual int32 InputDim() const { return input_dim_; }
-  virtual int32 OutputDim() const { return output_dim_; }
-  virtual void Read(std::istream &is, bool binary);
-  virtual void Write(std::ostream &os, bool binary) const;
-  virtual std::string Info() const;
-  virtual Component* Copy() const { return new MaxPoolingOverBlock(*this); }
-  virtual void* Propagate(const ComponentPrecomputedIndexes *indexes,
-                          const CuMatrixBase<BaseFloat> &in,
-                          CuMatrixBase<BaseFloat> *out) const;
-  virtual void Backprop(const std::string &debug_info,
-                        const ComponentPrecomputedIndexes *indexes,
-                        const CuMatrixBase<BaseFloat> &in_value, //in_value
-                        const CuMatrixBase<BaseFloat> &out_value, // out_value,
-                        const CuMatrixBase<BaseFloat> &out_deriv,
-                        void *memo,
-                        Component *to_update,
-                        CuMatrixBase<BaseFloat> *in_deriv) const;
- private:
-  int32 input_dim_;
-  int32 output_dim_;
-  MaxPoolingOverBlock &operator = (const MaxPoolingOverBlock &other); // Disallow.
-};
-
-
 /*
  ClipGradientComponent just duplicates its input, but clips gradients
  during backpropagation if they cross a predetermined threshold.

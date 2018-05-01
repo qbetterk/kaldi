@@ -1190,86 +1190,100 @@ void CuMatrixBase<Real>::AddMatBlocks(Real alpha, const CuMatrixBase<Real> &A,
 
 template<typename Real>
 void CuMatrixBase<Real>::MaxMatBlocks(const CuMatrixBase<Real> &A,
-                                      MatrixTransposeType transA) {
+                                      vector index_max,
+                                      MatrixTransposeType transA,
+                                      const int32 input_t_dim_,
+                                      const int32 pool_t_size_,
+                                      const int32 pool_t_step_,
+                                      const int32 input_h_dim_,
+                                      const int32 pool_h_size_,
+                                      const int32 pool_h_step_,
+                                      const int32 input_f_dim_,
+                                      const int32 pool_f_size_,
+                                      const int32 pool_f_step_) {
   if (num_rows_ == 0 || num_cols_ == 0) return;
+
+  int32 num_pools_t = 1 + (input_t_dim_ - pool_t_size_) / pool_t_step_;
+  int32 num_pools_h = 1 + (input_h_dim_ - pool_h_size_) / pool_h_step_;
+  int32 num_pools_f = 1 + (input_f_dim_ - pool_f_size_) / pool_f_step_;
+
+  // Not sure whether this needed?
+  KALDI_ASSERT((input_t_dim_ - pool_t_size_) % pool_t_step_ == 0 && 
+               (input_h_dim_ - pool_h_size_) % pool_h_step_ == 0 &&
+               (input_f_dim_ - pool_f_size_) % pool_f_step_ == 0);
 
   if (A.NumRows() >= (transA == kNoTrans ? num_rows_ : num_cols_) &&
       A.NumCols() >= (transA == kNoTrans ? num_cols_ : num_rows_)) {
-    // This is the "summing", not broadcasting, version of AddMatBlocks.
+    // This is the "forward-propagation" version of MaxMatBlocks.
     // It supports both regular and transposed operation.
-    int32 num_row_blocks, num_col_blocks;
+
     if (transA == kNoTrans) {
-      KALDI_ASSERT(A.NumRows() % num_rows_ == 0 && A.NumCols() % num_cols_ == 0);
-      num_row_blocks = A.Mat().NumRows() / num_rows_;
-      num_col_blocks = A.Mat().NumCols() / num_cols_;
+      KALDI_ASSERT(A.NumRows() == input_t_dim_ &&
+                   A.NumCols() == input_h_dim_ * input_f_dim_ &&
+                   num_rows_ == num_pools_t  &&
+                   num_cols_ == num_pools_h * num_pools_f);
+
     } else {
-      KALDI_ASSERT(A.NumRows() % num_cols_ == 0 && A.NumCols() % num_rows_ == 0);
-      num_row_blocks = A.Mat().NumRows() / num_cols_;
-      num_col_blocks = A.Mat().NumCols() / num_rows_;
+      KALDI_ASSERT(A.NumCols() == input_t_dim_ &&
+                   A.NumRows() == input_h_dim_ * input_f_dim_ &&
+                   num_cols_ == num_pools_t  &&
+                   num_rows_ == num_pools_h * num_pools_f);
+
     }
 #if HAVE_CUDA == 1
     if (CuDevice::Instantiate().Enabled()) {
       CuTimer tim;
-      dim3 dimGrid, dimBlock;
-      GetBlockSizesForSimpleMatrixOperation(NumRows(), NumCols(),
-                                            &dimGrid, &dimBlock);
-      cuda_max_mat_blocks(dimGrid, dimBlock, A.data_, num_row_blocks,
-                          num_col_blocks, data_, Dim(), A.Stride(),
-                          (transA == kTrans ? 1 : 0));
+      dim3 dimBlock(num_pools_t, num_pools_h, num_pools_f);
+      dim3 dimGrid(1024);
+      // dim3 dimGrid, dimBlock;
+      // GetBlockSizesForSimpleMatrixOperation(NumRows(), NumCols(),
+      //                                       &dimGrid, &dimBlock);
+      cuda_max_mat_blocks(dimGrid, dimBlock, A.data_, data_, Dim(), 
+                          input_t_dim_, pool_t_size_, pool_t_step_,
+                          input_h_dim_, pool_h_size_, pool_h_step_,
+                          input_f_dim_, pool_f_size_, pool_f_step_,
+                          index_max_, (transA == kTrans ? 1 : 0));
       CU_SAFE_CALL(cudaGetLastError());
 
       CuDevice::Instantiate().AccuProfile(__func__, tim);
-    } //else
+    } else
 #endif
     // {
-    //   int32 nr, nc;
-    //   if (transA == kNoTrans) {
-    //     nr = num_rows_;
-    //     nc = num_cols_;
-    //   } else {
-    //     nr = num_cols_;
-    //     nc = num_rows_;
-    //   }
-    //   for (int32 i = 0; i < num_row_blocks; i++) {
-    //     for (int32 j = 0; j < num_col_blocks; j++) {
-    //       Mat().AddMat(alpha, SubMatrix<Real>(A.Mat(), i * nr, nr, j * nc, nc),
-    //                    transA);
-    //     }
-    //   }
+    // TO DO
+    // maxpooling without cuda
     // }
   } else {
-    // This is the "broadcasting" version of MaxMatBlocks, where
+
+    // This is the "backward-propagation" version of MaxMatBlocks, where
     // *this is larger than src.
-    if (transA != kNoTrans)
-      KALDI_ERR << "Transposed operation not supported currently.";
-    if (!(num_rows_ % A.NumRows() == 0 && num_cols_ % A.NumCols() == 0))
-      KALDI_ERR << "Invalid sizes of arguments";
+    if (transA == kNoTrans){
+      KALDI_ASSERT(A.NumRows() == num_pools_t &&
+                   A.NumCols() == num_pools_h * num_pools_f &&
+                   num_rows_ == input_t_dim_  &&
+                   num_cols_ == input_h_dim_ * input_f_dim_);
+    } else {
+      KALDI_ASSERT(A.NumCols() == num_pools_t &&
+                   A.NumRows() == num_pools_h * num_pools_f &&
+                   num_cols_ == input_t_dim_  &&
+                   num_rows_ == input_h_dim_ * input_f_dim_);
+    }
+
 #if HAVE_CUDA == 1
     if (CuDevice::Instantiate().Enabled()) {
       CuTimer tim;
       dim3 dimGrid, dimBlock;
       GetBlockSizesForSimpleMatrixOperation(NumRows(), NumCols(),
                                             &dimGrid, &dimBlock);
-      cuda_max_mat_repeated(dimGrid, dimBlock,
+      cuda_max_mat_blocks_back(dimGrid, dimBlock, index_max_,
                             A.data_, A.Dim(), data_, Dim());
       CU_SAFE_CALL(cudaGetLastError());
       CuDevice::Instantiate().AccuProfile(__func__, tim);
-    } //else
+    } else
 #endif
-//     {
-//       const MatrixBase<Real> &src_mat = A.Mat(),
-//           &this_mat = this->Mat();
-//       for (int32 row_offset = 0; row_offset < NumRows();
-//            row_offset += src_mat.NumRows()) {
-//         for (int32 col_offset = 0; col_offset < NumCols();
-//              col_offset += src_mat.NumCols()) {
-//           SubMatrix<Real> this_part(this_mat,
-//                                     row_offset, src_mat.NumRows(),
-//                                     col_offset, src_mat.NumCols());
-//           this_part.AddMat(alpha, src_mat);
-//         }
-//       }
-//     }
+    // {
+    // TO DO
+    // maxpooling backward propagation without cuda
+    // }
   }
 }
 

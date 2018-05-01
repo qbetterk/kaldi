@@ -25,6 +25,7 @@
 #include "nnet3/natural-gradient-online.h"
 #include "nnet3/convolution.h"
 #include <iostream>
+#include <vector>
 
 namespace kaldi {
 namespace nnet3 {
@@ -370,8 +371,171 @@ class TimeHeightConvolutionComponent: public UpdatableComponent {
   OnlineNaturalGradient preconditioner_out_;
 };
 
+/**  MaxPoolingOverBlock gets maximum value over blocks of its input
+  this component should be compatible with TimeHeightConvolutionComponent
+
+  MaxPoolingOverBlock :
+  MaxPoolingOverBlock component was firstly used in ConvNet for selecting an
+  representative activation in an area. It inspired Maxout nonlinearity.
+  Each output element of this component is the maximum of a block of
+  input elements where the block has a 2.5D dimension (pool_t_size_,
+  pool_h_size_ * pool_f_size_).
+  Blocks could overlap if the shift value on any axis is smaller
+  than its corresponding pool size (e.g. pool_t_step_ < pool_t_size_).
+  If the shift values are euqal to their pool size, there is no
+  overlap; while if they all equal 1, the blocks overlap to
+  the greatest possible extent.
+ 
+  This component is designed to be used after a ConvolutionComponent
+  so that the input matrix is propagated from a 2d-convolutional layer.
+  This component implements 2.5d-maxpooling which performs
+  max pooling along the three axes.
+ 
+  Input : A 2.5D matrix with dimensions:
+         t: (e.g. time)
+         h: (e.g. height, mel-frequency)
+         f: (e.g. channels like number of filters in the ConvolutionComponent)
+ 
+         The reason why we call the matrix 2.5D is because we compress the 3D block 
+         into a 2D matrix by concatenating each 2D matrix at different channel like:
+ 
+                     h = 0                   h = 1
+        |------------------------|------------------------|----...
+         f=0  f=1  f=2  ...  f=n  f=0  f=1  f=2  ...  f=n 
+        |----|----|----|----|----|----|----|----|----|----|----...
+    t=0  **** **** **** **** ****|**** **** **** **** ****|****... -
+    t=1  **** **** **** **** ****|**** **** **** **** ****|****... | m
+    t=2  **** **** **** **** ****|**** **** **** **** ****|****... | a
+    t=3  **** **** **** **** ****|**** **** **** **** ****|****... | t
+    t=4  **** **** **** **** ****|**** **** **** **** ****|****... | r
+    t=5  **** **** **** **** ****|**** **** **** **** ****|****... | i
+    t=6  **** **** **** **** ****|**** **** **** **** ****|****... | x
+    t=7  **** **** **** **** ****|**** **** **** **** ****|****... -
+    
+          In this case, if we set pool_t_size = 2, pool_t_step = 1
+                                  pool_h_size = 2, pool_h_step = 1
+                                  pool_f_size = 2, pool_f_step = 1
+          Then, the pooling block is like:
+          
+           h = 0     h = 1             h = 0     h = 1                  h = 1     h = 2              
+        |---------|---------|       |---------|---------|            |---------|---------|
+         f=0  f=1  f=0  f=1          f=1  f=2  f=1  f=2               f=0  f=1  f=0  f=1   
+        |----|----|----|----|       |----|----|----|----|   ...      |----|----|----|----|  ......
+    t=0  **** **** **** ****    t=0  **** **** **** ****         t=0  **** **** **** ****  
+    t=1  **** **** **** ****    t=1  **** **** **** ****         t=1  **** **** **** ****  
 
 
+           h = 0     f = 1             h = 0    h = 1                   h = 1     h = 2              
+        |---------|---------|       |---------|---------|            |---------|---------|
+         f=0  f=1  f=0  f=1          f=1  f=2  f=1  f=2               f=0  f=1  f=0  f=1   
+        |----|----|----|----|       |----|----|----|----|   ...      |----|----|----|----|  ......
+    t=1  **** **** **** ****    t=1  **** **** **** ****         t=1  **** **** **** ****  
+    t=2  **** **** **** ****    t=2  **** **** **** ****         t=2  **** **** **** ****  
+
+                  .                            .                               .
+                  .                            .                               .
+                  .                            .                               .
+                  .                            .                               .
+                  .                            .                               .
+                  .                            .                               .
+
+      Since the stride of filter(pool_f_step) is usually smaller than the 
+      stride of height(poo_h_step), we arrange each row of output as:
+      (all filters for height 0)(all filters for height 1)...
+
+  Parameters:
+
+            input_t_dim_    size of the input along t-axis
+                            (e.g. number of time steps)
+            input_h_dim_    size of input along h-axis
+                            (e.g. number of mel-frequency bins)
+            input_f_dim_    size of input along f-axis
+                            (e.g. number of filters in the ConvolutionComponent)
+
+            pool_t_size_    size of the pooling window along t-axis
+            pool_h_size_    size of the pooling window along h-axis
+            pool_f_size_    size of the pooling window along f-axis
+
+            pool_t_step_    the number of steps taken along t-axis of input
+                            before computing the next pool (e.g. the stride
+                             size along t-axis)
+            pool_h_step_    the number of steps taken along h-axis of input
+                            before computing the next pool (e.g. the stride
+                             size along t-axis)
+            pool_f_step_    the number of steps taken along f-axis of input
+                            before computing the next pool (e.g. the stride
+                             size along t-axis)
+
+            index_max_      a vector that store the index of the maximum 
+                            value as (t,h,f), used in back-propagation.
+
+ 
+ 
+  Output : The output is also a 2.5D tensor with dimension (num_block_t by 
+           num_block_h * num_block_f) where:
+ 
+           num_block_t = 1 + (input_t_dim_ - pool_t_size_) / pool_t_step_; 
+           // the number of blocks in t dimension
+           num_block_h = 1 + (input_h_dim_ - pool_h_size_) / pool_h_step_; 
+           // the number of blocks in h dimension
+           num_block_f = 1 + (input_f_dim_ - pool_f_size_) / pool_f_step_; 
+           // the number of blocks in f dimension
+ 
+ 
+ */
+class MaxPoolingOverBlock: public Component {
+ public:
+  explicit MaxPoolingOverBlock(const MaxPoolingOverBlock &other);
+  MaxPoolingOverBlock(): input_t_dim_(0), input_h_dim_(0), input_f_dim_(0),
+                         pool_t_size_(0), pool_h_size_(0), pool_f_size_(0),
+                         pool_t_step_(0), pool_h_step_(0), pool_f_step_(0) { }
+  virtual std::string Type() const { return "MaxPoolingOverBlock"; }
+  virtual int32 Properties() const {
+    return kSimpleComponent|kBackpropNeedsInput|kBackpropNeedsOutput|kBackpropAdds;
+  }
+  virtual void InitFromConfig(ConfigLine *cfl);
+  virtual int32 InputDim() const;// { return input_dim_; }
+  virtual int32 OutputDim() const;// { return output_dim_; }
+  virtual void Read(std::istream &is, bool binary);
+  virtual void Write(std::ostream &os, bool binary) const;
+  virtual std::string Info() const;
+  virtual Component* Copy() const { return new MaxPoolingOverBlock(*this); }
+  virtual void* Propagate(const ComponentPrecomputedIndexes *indexes,
+                          const CuMatrixBase<BaseFloat> &in,
+                          CuMatrixBase<BaseFloat> *out) const;
+  virtual void Backprop(const std::string &debug_info,
+                        const ComponentPrecomputedIndexes *indexes,
+                        const CuMatrixBase<BaseFloat> &in_value, //in_value
+                        const CuMatrixBase<BaseFloat> &out_value, // out_value,
+                        const CuMatrixBase<BaseFloat> &out_deriv,
+                        void *memo,
+                        Component *to_update,
+                        CuMatrixBase<BaseFloat> *in_deriv) const;
+  virtual void Check() const;
+
+ private:
+  int32 input_t_dim_;   // size of the input along t-axis
+  // (e.g. number of time steps)
+  int32 input_h_dim_;   // size of input along h-axis
+  // (e.g. number of mel-frequency bins)
+  int32 input_f_dim_;   // size of input along f-axis
+  // (e.g. number of filters in the ConvolutionComponent)
+
+  int32 pool_t_size_;    // size of the pooling window along t-axis
+  int32 pool_h_size_;    // size of the pooling window along h-axis
+  int32 pool_f_size_;    // size of the pooling window along f-axis
+
+  int32 pool_t_step_;   // the number of steps taken along t-axis of input
+  //  before computing the next pool
+  int32 pool_h_step_;   // the number of steps taken along h-axis of input
+  // before computing the next pool
+  int32 pool_f_step_;   // the number of steps taken along f-axis of input
+  // before computing the next pool
+
+  vector index_max_;
+
+  MaxPoolingOverBlock &operator = (const MaxPoolingOverBlock &other); // Disallow.
+};
 
 } // namespace nnet3
 } // namespace kaldi

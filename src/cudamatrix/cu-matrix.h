@@ -509,24 +509,29 @@ class CuMatrixBase {
   void AddMatBlocks(Real alpha, const CuMatrixBase<Real> &A,
                     MatrixTransposeType trans = kNoTrans);
 
-  /// This function does *this = max(*this, src). similar with AddMatBlocks,
-  /// it supports cases where *this and src have different dimension.  
-  /// There are two allowed cases:
+
+  /// This function is used for do the  maxpooling over blocks. The detailed 
+  /// description is written in the MaxPoolingOverBlock component in file
+  /// nnet-convolutional-component.h
   ///
-  ///  (1) *this is larger than src; this case is probably for backpropagation.
-  ///       In this case, we do a broadcasting operation.  *this must
-  ///       have NumRows() == a * src.NumRows() and NumCols() == b *
-  ///       src.NumCols() for integer a >= 1, b >= 1.  *this will be treated as
-  ///       being made up of of blocks with the same size as src, and to each
-  ///       block we'll add src.  This case does not support trans == kTrans.
+  /// To point out, this function has two version 'forward-propagate' and
+  /// 'backward-propagate':
   ///
-  ///  (2) *this is smaller than src; we select the maximum.  src.NumRows() must 
-  ///      == a * this->NumRows(), and src.NumCols() must == b * this->NumCols(), 
-  ///      for a >= 1, b >= 1.  In this case, src will be treated as being made 
-  ///      up of blocks with the same size as *this, and to *this we will select
-  ///      max value over all of those blocks.
-  void MaxMatBlocks(const CuMatrixBase<Real> &A,
-                    MatrixTransposeType trans = kNoTrans);
+  ///  (1)  When the size of input matrix &A is larger than *this, it is then a 
+  ///       'forward-propagate' version, and the function do the maxpooling 
+  ///       depending on the parameters. Meanwhile, it stores the index of 
+  ///       maximum value in each pool in vector 'index_max_' for backpropagation.
+  ///
+  ///  (2)  When the size of input matrix &A is smaller than *this, it is then a 
+  ///       'backward-propagate' version. According to the vector 'index_max_', the 
+  ///       function set all the values in &out_deriv whose index is not in 
+  ///       vector(not corresponding to maximum value in each pool of &in_value) 
+  ///       as zero, and keeps those correponding to maximum value as the *in_deriv.
+  void MaxMatBlocks(const CuMatrixBase<Real> &A, vector index_max_,
+                    MatrixTransposeType trans = kNoTrans,
+                    const int32 input_t_dim_, const int32 pool_t_size_, const int32 pool_t_step_,
+                    const int32 input_h_dim_, const int32 pool_h_size_, const int32 pool_h_step_,
+                    const int32 input_f_dim_, const int32 pool_f_size_, const int32 pool_f_step_);
 
   /// (for each column c of *this), c = alpha * col + beta * c
   void AddVecToCols(Real alpha, const CuVectorBase<Real> &col, Real beta = 1.0);

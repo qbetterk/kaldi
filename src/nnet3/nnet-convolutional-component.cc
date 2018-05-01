@@ -666,6 +666,169 @@ void TimeHeightConvolutionComponent::PrecomputedIndexes::Read(
   ExpectToken(is, binary, "</TimeHeightConvolutionComponentPrecomputedIndexes>");
 }
 
+MaxPoolingOverBlock::MaxPoolingOverBlock(
+    const MaxPoolingOverBlock &other):
+    input_t_dim_(other.input_t_dim_),
+    input_h_dim_(other.input_h_dim_),
+    input_f_dim_(other.input_f_dim_),
+    pool_t_size_(other.pool_t_size_),
+    pool_h_size_(other.pool_h_size_),
+    pool_f_size_(other.pool_f_size_),
+    pool_t_step_(other.pool_t_step_),
+    pool_h_step_(other.pool_h_step_),
+    pool_f_step_(other.pool_f_step_) { }
+
+// aquire input dim
+int32 MaxpoolingComponent::InputDim() const {
+  return input_t_dim_ * input_h_dim_ * input_f_dim_;
+}
+
+// aquire output dim
+int32 MaxpoolingComponent::OutputDim() const {
+  int32 num_pools_t = 1 + (input_t_dim_ - pool_t_size_) / pool_t_step_;
+  int32 num_pools_h = 1 + (input_h_dim_ - pool_h_size_) / pool_h_step_;
+  int32 num_pools_f = 1 + (input_f_dim_ - pool_f_size_) / pool_f_step_;
+  return num_pools_t * num_pools_h * num_pools_f;
+}
+
+// check the component parameters
+void MaxpoolingComponent::Check() const {
+  // sanity check of the max pooling parameters
+  KALDI_ASSERT(input_t_dim_ > 0);
+  KALDI_ASSERT(input_h_dim_ > 0);
+  KALDI_ASSERT(input_f_dim_ > 0);
+  KALDI_ASSERT(pool_t_size_ > 0);
+  KALDI_ASSERT(pool_h_size_ > 0);
+  KALDI_ASSERT(pool_f_size_ > 0);
+  KALDI_ASSERT(pool_t_step_ > 0);
+  KALDI_ASSERT(pool_h_step_ > 0);
+  KALDI_ASSERT(pool_f_step_ > 0);
+  KALDI_ASSERT(input_t_dim_ >= pool_t_size_);
+  KALDI_ASSERT(input_h_dim_ >= pool_h_size_);
+  KALDI_ASSERT(input_f_dim_ >= pool_f_size_);
+  KALDI_ASSERT(pool_t_size_ >= pool_t_step_);
+  KALDI_ASSERT(pool_h_size_ >= pool_h_step_);
+  KALDI_ASSERT(pool_f_size_ >= pool_f_step_);
+  KALDI_ASSERT((input_t_dim_ - pool_t_size_) % pool_t_step_  == 0);
+  KALDI_ASSERT((input_h_dim_ - pool_h_size_) % pool_h_step_  == 0);
+  KALDI_ASSERT((input_f_dim_ - pool_f_size_) % pool_f_step_  == 0);
+}
+
+// initialize the component using configuration file
+void MaxPoolingOverBlock::InitFromConfig(ConfigLine *cfl) {
+  bool ok = true;
+
+  ok = ok && cfl->GetValue("input-t-dim", &input_t_dim_);
+  ok = ok && cfl->GetValue("input-h-dim", &input_h_dim_);
+  ok = ok && cfl->GetValue("input-f-dim", &input_f_dim_);
+  ok = ok && cfl->GetValue("pool-t-size", &pool_t_size_);
+  ok = ok && cfl->GetValue("pool-h-size", &pool_h_size_);
+  ok = ok && cfl->GetValue("pool-f-size", &pool_f_size_);
+  ok = ok && cfl->GetValue("pool-t-step", &pool_t_step_);
+  ok = ok && cfl->GetValue("pool-h-step", &pool_h_step_);
+  ok = ok && cfl->GetValue("pool-f-step", &pool_f_step_);
+
+  if (cfl->HasUnusedValues())
+    KALDI_ERR << "Could not process these elements in initializer: "
+              << cfl->UnusedValues();
+  if (!ok)
+    KALDI_ERR << "Bad initializer " 
+              << cfl->WholeLine();
+
+  Check();
+}
+
+void MaxPoolingOverBlock::Read(std::istream &is, bool binary) {
+  ExpectOneOrTwoTokens(is, binary, "<MaxPoolingOverBlock>", "<InputTDim>");
+  ReadBasicType(is, binary, &input_t_dim_);
+  ExpectToken(is, binary, "<InputHDim>");
+  ReadBasicType(is, binary, &input_h_dim_);
+  ExpectToken(is, binary, "<InputFDim>");
+  ReadBasicType(is, binary, &input_f_dim_);
+  ExpectToken(is, binary, "<PoolTize>");
+  ReadBasicType(is, binary, &pool_t_size_);
+  ExpectToken(is, binary, "<PoolHSize>");
+  ReadBasicType(is, binary, &pool_h_size_);
+  ExpectToken(is, binary, "<PoolFSize>");
+  ReadBasicType(is, binary, &pool_f_size_);
+  ExpectToken(is, binary, "<PoolTStep>");
+  ReadBasicType(is, binary, &pool_t_step_);
+  ExpectToken(is, binary, "<PoolHStep>");
+  ReadBasicType(is, binary, &pool_h_step_);
+  ExpectToken(is, binary, "<PoolFStep>");
+  ReadBasicType(is, binary, &pool_f_step_);
+  ExpectToken(is, binary, "</MaxPoolingOverBlock>");
+  Check();
+}
+
+void MaxPoolingOverBlock::Write(std::ostream &os, bool binary) const {
+  WriteToken(os, binary, "<MaxPoolingOverBlock>");
+  WriteToken(os, binary, "<InputTDim>");
+  WriteBasicType(os, binary, input_t_dim_);
+  WriteToken(os, binary, "<InputHDim>");
+  WriteBasicType(os, binary, input_h_dim_);
+  WriteToken(os, binary, "<InputFDim>");
+  WriteBasicType(os, binary, input_f_dim_);
+  WriteToken(os, binary, "<PoolTSize>");
+  WriteBasicType(os, binary, pool_t_size_);
+  WriteToken(os, binary, "<PoolHSize>");
+  WriteBasicType(os, binary, pool_h_size_);
+  WriteToken(os, binary, "<PoolFSize>");
+  WriteBasicType(os, binary, pool_f_size_);
+  WriteToken(os, binary, "<PoolTStep>");
+  WriteBasicType(os, binary, pool_t_step_);
+  WriteToken(os, binary, "<PoolHStep>");
+  WriteBasicType(os, binary, pool_h_step_);
+  WriteToken(os, binary, "<PoolFStep>");
+  WriteBasicType(os, binary, pool_f_step_);
+  WriteToken(os, binary, "</MaxPoolingOverBlock>");
+}
+
+// display information about component
+std::string MaxPoolingOverBlock::Info() const {
+  std::ostringstream stream;
+  stream << Type()
+         << ", input-t-dim=" << input_t_dim_
+         << ", input-h-dim=" << input_h_dim_
+         << ", input-f-dim=" << input_f_dim_
+         << ", pool-t-size=" << pool_t_size_
+         << ", pool-h-size=" << pool_h_size_
+         << ", pool-f-size=" << pool_f_size_
+         << ", pool-t-step=" << pool_t_step_
+         << ", pool-h-step=" << pool_h_step_
+         << ", pool-f-step=" << pool_f_step_;
+  return stream.str();
+}
+
+void* MaxPoolingOverBlock::Propagate(const ComponentPrecomputedIndexes *indexes,
+                                     const CuMatrixBase<BaseFloat> &in,
+                                     CuMatrixBase<BaseFloat> *out) const {
+
+  out->MaxMatBlocks(in, index_max_, kNoTrans,
+                    input_t_dim_, pool_t_size_, pool_t_step_,
+                    input_h_dim_, pool_h_size_, pool_h_step_,
+                    input_f_dim_, pool_f_size_, pool_f_step_);
+  return NULL;
+}
+
+void MaxPoolingOverBlock::Backprop(
+    const std::string &debug_info,
+    const ComponentPrecomputedIndexes *indexes,
+    const CuMatrixBase<BaseFloat> &in_value, //in_value
+    const CuMatrixBase<BaseFloat> &out_value, // out_value,
+    const CuMatrixBase<BaseFloat> &out_deriv,
+    void *memo,
+    Component *to_update,
+    CuMatrixBase<BaseFloat> *in_deriv) const {
+
+  if (in_deriv) {
+    in_derv->MaxMatBlocks(out_deriv, index_max_, kNoTrans,
+                          input_t_dim_, pool_t_size_, pool_t_step_,
+                          input_h_dim_, pool_h_size_, pool_h_step_,
+                          input_f_dim_, pool_f_size_, pool_f_step_);
+
+  }
+}
 
 } // namespace nnet3
 } // namespace kaldi
