@@ -179,7 +179,7 @@ inline void cuda_max_mat_blocks(dim3 Gr, dim3 Bl,
                                 int32_cuda input_f_dim_,
                                 int32_cuda pool_f_size_,
                                 int32_cuda pool_f_step_, 
-                                double index_max_, int A_trans) {
+                                int index_max_, int A_trans) {
   cudaD_max_mat_blocks(Gr, Bl, src, dst,
                         input_t_dim_, pool_t_size_, pool_t_step_,
                         input_h_dim_, pool_h_size_, pool_h_step_,
@@ -197,7 +197,7 @@ inline void cuda_max_mat_blocks(dim3 Gr, dim3 Bl,
                                 int32_cuda input_f_dim_,
                                 int32_cuda pool_f_size_,
                                 int32_cuda pool_f_step_, 
-                                float index_max_, int A_trans) {
+                                int index_max_, int A_trans) {
   cudaF_max_mat_blocks(Gr, Bl, src, dst,
                         input_t_dim_, pool_t_size_, pool_t_step_,
                         input_h_dim_, pool_h_size_, pool_h_step_,

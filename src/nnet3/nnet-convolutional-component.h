@@ -495,19 +495,19 @@ class MaxPoolingOverBlock: public Component {
     return kSimpleComponent|kBackpropNeedsInput|kBackpropNeedsOutput|kBackpropAdds;
   }
   virtual void InitFromConfig(ConfigLine *cfl);
-  virtual int32 InputDim() const;// { return input_dim_; }
-  virtual int32 OutputDim() const;// { return output_dim_; }
+  virtual int32 InputDim() const;
+  virtual int32 OutputDim() const;
   virtual void Read(std::istream &is, bool binary);
   virtual void Write(std::ostream &os, bool binary) const;
   virtual std::string Info() const;
   virtual Component* Copy() const { return new MaxPoolingOverBlock(*this); }
   virtual void* Propagate(const ComponentPrecomputedIndexes *indexes,
-                          const CuMatrixBase<BaseFloat> &in,
-                          CuMatrixBase<BaseFloat> *out) const;
+                          const CuMatrixBase<BaseFloat> &in_value,
+                          CuMatrixBase<BaseFloat> *out_value) const;
   virtual void Backprop(const std::string &debug_info,
                         const ComponentPrecomputedIndexes *indexes,
-                        const CuMatrixBase<BaseFloat> &in_value, //in_value
-                        const CuMatrixBase<BaseFloat> &out_value, // out_value,
+                        const CuMatrixBase<BaseFloat> &,//in_value,
+                        const CuMatrixBase<BaseFloat> &,//out_value,
                         const CuMatrixBase<BaseFloat> &out_deriv,
                         void *memo,
                         Component *to_update,

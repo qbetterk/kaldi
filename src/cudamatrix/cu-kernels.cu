@@ -775,30 +775,37 @@ static void _add_mat_blocks_trans(Real alpha, const Real* src,
 
 template<typename Real>
 __global__
-static void _max_mat_blocks(const Real* src,
-                            int32_cuda num_row_blocks,
-                            int32_cuda num_col_blocks, Real* dst, MatrixDim d,
-                            int src_stride) {
+static void _max_mat_blocks(const Real* src, Real* dst,
+                            const int32_cuda input_t_dim_,
+                            const int32_cuda pool_t_size_,
+                            const int32_cuda pool_t_step_,
+                            const int32_cuda input_h_dim_,
+                            const int32_cuda pool_h_size_,
+                            const int32_cuda pool_h_step_,
+                            const int32_cuda input_f_dim_,
+                            const int32_cuda pool_f_size_,
+                            const int32_cuda pool_f_step_, 
+                            int index_max_) {
   int32_cuda i = blockIdx.x * blockDim.x + threadIdx.x;
   int32_cuda j = blockIdx.y * blockDim.y + threadIdx.y;
-  int32_cuda index = i + j * d.stride;
-  int32_cuda index_src = i + j * src_stride;
-  if (i < d.cols && j < d.rows)
-    for (int32_cuda p = 0; p < num_row_blocks; p++) {
-      for (int32_cuda q = 0; q < num_col_blocks; q++) {
-        dst[index] = fmax(
-            src[index_src + p * src_stride * d.rows + q * d.cols],
-            dst[index]);
+
       }
     }
 }
 
 template<typename Real>
 __global__
-static void _max_mat_blocks_trans(const Real* src,
-                                  int32_cuda num_row_blocks,
-                                  int32_cuda num_col_blocks, Real* dst,
-                                  MatrixDim d, int src_stride) {
+static void _max_mat_blocks_trans(const Real* src, Real* dst,
+                                  const int32_cuda input_t_dim_,
+                                  const int32_cuda pool_t_size_,
+                                  const int32_cuda pool_t_step_,
+                                  const int32_cuda input_h_dim_,
+                                  const int32_cuda pool_h_size_,
+                                  const int32_cuda pool_h_step_,
+                                  const int32_cuda input_f_dim_,
+                                  const int32_cuda pool_f_size_,
+                                  const int32_cuda pool_f_step_, 
+                                  int index_max_) {
   int32_cuda i = blockIdx.x * blockDim.x + threadIdx.x;
   int32_cuda j = blockIdx.y * blockDim.y + threadIdx.y;
   int32_cuda index = i + j * d.stride;
@@ -815,9 +822,9 @@ static void _max_mat_blocks_trans(const Real* src,
 
 template<typename Real>
 __global__
-static void _max_mat_repeated(const Real* src,
-                              MatrixDim src_dim, Real* dst,
-                              MatrixDim dst_dim) {
+static void _max_mat_blocks_back(const int index_max_, const Real* src,
+                                 MatrixDim src_dim, Real* dst,
+                                 MatrixDim dst_dim) {
   int32_cuda i = blockIdx.x * blockDim.x + threadIdx.x;
   int32_cuda j = blockIdx.y * blockDim.y + threadIdx.y;
   int32_cuda src_i = i % src_dim.cols,
@@ -4007,16 +4014,29 @@ void cudaF_add_mat_blocks(dim3 Gr, dim3 Bl, float alpha, const float* src,
   }
 }
 
-void cudaF_max_mat_blocks(dim3 Gr, dim3 Bl, const float* src,
-                          int32_cuda num_row_blocks, int32_cuda num_col_blocks,
-                          float* dst, MatrixDim d, int src_stride,
-                          int A_trans) {
+void cudaF_max_mat_blocks(dim3 Gr, dim3 Bl, const float *src, float *dst,
+                        int32_cuda input_t_dim_,
+                        int32_cuda pool_t_size_,
+                        int32_cuda pool_t_step_,
+                        int32_cuda input_h_dim_,
+                        int32_cuda pool_h_size_,
+                        int32_cuda pool_h_step_,
+                        int32_cuda input_f_dim_,
+                        int32_cuda pool_f_size_,
+                        int32_cuda pool_f_step_, 
+                        int index_max_, int A_trans) {
   if (A_trans) {
-    _max_mat_blocks_trans<<<Gr,Bl>>>(src, num_row_blocks, num_col_blocks,
-        dst, d, src_stride);
+    _max_mat_blocks_trans<<<Gr,Bl>>>(src, dst,
+                        input_t_dim_, pool_t_size_, pool_t_step_,
+                        input_h_dim_, pool_h_size_, pool_h_step_,
+                        input_f_dim_, pool_f_size_, pool_f_step_,
+                        index_max_);
   } else {
-    _max_mat_blocks<<<Gr,Bl>>>(src, num_row_blocks, num_col_blocks, dst,
-        d, src_stride);
+    _max_mat_blocks<<<Gr,Bl>>>(src, dst,
+                        input_t_dim_, pool_t_size_, pool_t_step_,
+                        input_h_dim_, pool_h_size_, pool_h_step_,
+                        input_f_dim_, pool_f_size_, pool_f_step_,
+                        index_max_);
   }
 }
 
@@ -4025,9 +4045,10 @@ void cudaF_add_mat_repeated(dim3 Gr, dim3 Bl, float alpha, const float* src,
   _add_mat_repeated<<<Gr,Bl>>>(alpha, src, src_dim, dst, dst_dim);
 }
 
-void cudaF_max_mat_repeated(dim3 Gr, dim3 Bl, const float* src,
-                            MatrixDim src_dim, float *dst, MatrixDim dst_dim) {
-  _max_mat_repeated<<<Gr,Bl>>>(src, src_dim, dst, dst_dim);
+void cudaF_max_mat_blocks_back(dim3 Gr, dim3 Bl, int index_max_,
+                                  const float *src, MatrixDim src_dim,
+                                  float *dst, MatrixDim dst_dim) {
+  _max_mat_blocks_back<<<Gr,Bl>>>(index_max_, src, src_dim, dst, dst_dim);
 }
 
 void cudaF_set_mat_mat_div_mat(dim3 Gr, dim3 Bl, const float *A, const float *B,
@@ -4728,16 +4749,29 @@ void cudaD_add_mat_blocks(dim3 Gr, dim3 Bl, double alpha, const double* src,
   }
 }
 
-void cudaD_max_mat_blocks(dim3 Gr, dim3 Bl, const double* src,
-                          int32_cuda num_row_blocks, int32_cuda num_col_blocks,
-                          double* dst, MatrixDim d, int src_stride,
-                          int A_trans) {
+void cudaD_max_mat_blocks(dim3 Gr, dim3 Bl, const double *src, double *dst,
+                                int32_cuda input_t_dim_,
+                                int32_cuda pool_t_size_,
+                                int32_cuda pool_t_step_,
+                                int32_cuda input_h_dim_,
+                                int32_cuda pool_h_size_,
+                                int32_cuda pool_h_step_,
+                                int32_cuda input_f_dim_,
+                                int32_cuda pool_f_size_,
+                                int32_cuda pool_f_step_, 
+                                int index_max_, int A_trans) {
   if (A_trans) {
-    _max_mat_blocks_trans<<<Gr,Bl>>>(src, num_row_blocks, num_col_blocks,
-        dst, d, src_stride);
+    _max_mat_blocks_trans<<<Gr,Bl>>>(src, dst,
+                        input_t_dim_, pool_t_size_, pool_t_step_,
+                        input_h_dim_, pool_h_size_, pool_h_step_,
+                        input_f_dim_, pool_f_size_, pool_f_step_,
+                        index_max_);
   } else {
-    _max_mat_blocks<<<Gr,Bl>>>(src, num_row_blocks, num_col_blocks, dst,
-        d, src_stride);
+    _max_mat_blocks<<<Gr,Bl>>>(src, dst,
+                        input_t_dim_, pool_t_size_, pool_t_step_,
+                        input_h_dim_, pool_h_size_, pool_h_step_,
+                        input_f_dim_, pool_f_size_, pool_f_step_,
+                        index_max_);
   }
 }
 
@@ -4746,9 +4780,9 @@ void cudaD_add_mat_repeated(dim3 Gr, dim3 Bl, double alpha, const double* src,
   _add_mat_repeated<<<Gr,Bl>>>(alpha, src, src_dim, dst, dst_dim);
 }
 
-void cudaD_max_mat_repeated(dim3 Gr, dim3 Bl, const double* src,
+void cudaD_max_mat_blocks_back(dim3 Gr, dim3 Bl, const double *src,
                             MatrixDim src_dim, double *dst, MatrixDim dst_dim) {
-  _max_mat_repeated<<<Gr,Bl>>>(src, src_dim, dst, dst_dim);
+  _max_mat_blocks_back<<<Gr,Bl>>>(index_max_, src, src_dim, dst, dst_dim);
 }
 
 void cudaD_set_mat_mat_div_mat(dim3 Gr, dim3 Bl, const double *A,

@@ -801,10 +801,10 @@ std::string MaxPoolingOverBlock::Info() const {
 }
 
 void* MaxPoolingOverBlock::Propagate(const ComponentPrecomputedIndexes *indexes,
-                                     const CuMatrixBase<BaseFloat> &in,
-                                     CuMatrixBase<BaseFloat> *out) const {
+                                     const CuMatrixBase<BaseFloat> &in_value,
+                                     CuMatrixBase<BaseFloat> *out_value) const {
 
-  out->MaxMatBlocks(in, index_max_, kNoTrans,
+  out_value->MaxMatBlocks(in_value, index_max_, kNoTrans,
                     input_t_dim_, pool_t_size_, pool_t_step_,
                     input_h_dim_, pool_h_size_, pool_h_step_,
                     input_f_dim_, pool_f_size_, pool_f_step_);
@@ -814,8 +814,8 @@ void* MaxPoolingOverBlock::Propagate(const ComponentPrecomputedIndexes *indexes,
 void MaxPoolingOverBlock::Backprop(
     const std::string &debug_info,
     const ComponentPrecomputedIndexes *indexes,
-    const CuMatrixBase<BaseFloat> &in_value, //in_value
-    const CuMatrixBase<BaseFloat> &out_value, // out_value,
+    const CuMatrixBase<BaseFloat> &,//in_value,
+    const CuMatrixBase<BaseFloat> &,//out_value,
     const CuMatrixBase<BaseFloat> &out_deriv,
     void *memo,
     Component *to_update,
