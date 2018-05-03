@@ -1,4 +1,4 @@
-// nnet3/nnet-convolutional-component.cc
+ // nnet3/nnet-convolutional-component.cc
 
 // Copyright      2017  Johns Hopkins University (author: Daniel Povey)
 

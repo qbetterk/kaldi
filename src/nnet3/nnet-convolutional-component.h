@@ -25,7 +25,6 @@
 #include "nnet3/natural-gradient-online.h"
 #include "nnet3/convolution.h"
 #include <iostream>
-#include <vector>
 
 namespace kaldi {
 namespace nnet3 {
@@ -467,18 +466,20 @@ class TimeHeightConvolutionComponent: public UpdatableComponent {
                              size along t-axis)
 
             index_max_      a vector that store the index of the maximum 
-                            value as (t,h,f), used in back-propagation.
+                            value as (r, c), used in back-propagation. The 
+                            size of this vector is 2 * num_pools_t * 
+                            num_pools_h * num_pools_f
 
  
  
   Output : The output is also a 2.5D tensor with dimension (num_block_t by 
            num_block_h * num_block_f) where:
  
-           num_block_t = 1 + (input_t_dim_ - pool_t_size_) / pool_t_step_; 
+           num_pools_t = 1 + (input_t_dim_ - pool_t_size_) / pool_t_step_; 
            // the number of blocks in t dimension
-           num_block_h = 1 + (input_h_dim_ - pool_h_size_) / pool_h_step_; 
+           num_pools_h = 1 + (input_h_dim_ - pool_h_size_) / pool_h_step_; 
            // the number of blocks in h dimension
-           num_block_f = 1 + (input_f_dim_ - pool_f_size_) / pool_f_step_; 
+           num_pools_f = 1 + (input_f_dim_ - pool_f_size_) / pool_f_step_; 
            // the number of blocks in f dimension
  
  
@@ -532,7 +533,7 @@ class MaxPoolingOverBlock: public Component {
   int32 pool_f_step_;   // the number of steps taken along f-axis of input
   // before computing the next pool
 
-  vector index_max_;
+  CuVectorBase<Real> index_max_; // the index of maximum value
 
   MaxPoolingOverBlock &operator = (const MaxPoolingOverBlock &other); // Disallow.
 };
