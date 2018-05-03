@@ -204,15 +204,41 @@ inline void cuda_max_mat_blocks(dim3 Gr, dim3 Bl,
                         input_f_dim_, pool_f_size_, pool_f_step_,
                         index_max_,   A_trans);
 }
-inline void cuda_max_mat_blocks_back(dim3 Gr, dim3 Bl, double index_max_,
-                                  const double *src, MatrixDim src_dim,
-                                  double *dst, MatrixDim dst_dim) {
-  cudaD_max_mat_blocks_back(Gr, Bl, index_max_, src, src_dim, dst, dst_dim);
+inline void cuda_max_mat_blocks_back(dim3 Gr, dim3 Bl,
+                                     const double *src, double *dst,
+                                     int32_cuda num_pools_t,
+                                     int32_cuda pool_t_size_,
+                                     int32_cuda pool_t_step_,
+                                     int32_cuda num_pools_h,
+                                     int32_cuda pool_h_size_,
+                                     int32_cuda pool_h_step_,
+                                     int32_cuda num_pools_f,
+                                     int32_cuda pool_f_size_,
+                                     int32_cuda pool_f_step_, 
+                                     int index_max_) {
+  cudaD_max_mat_blocks_back(Gr, Bl, src, dst,
+                            num_pools_t, pool_t_size_, pool_t_step_,
+                            num_pools_h, pool_h_size_, pool_h_step_,
+                            num_pools_f, pool_f_size_, pool_f_step_,
+                            index_max_);
 }
-inline void cuda_max_mat_blocks_back(dim3 Gr, dim3 Bl, float index_max_,
-                                  const float *src, MatrixDim src_dim,
-                                  float *dst, MatrixDim dst_dim) {
-  cudaF_max_mat_blocks_back(Gr, Bl, index_max_, src, src_dim, dst, dst_dim);
+inline void cuda_max_mat_blocks_back(dim3 Gr, dim3 Bl,
+                                     const float *src, float *dst,
+                                     int32_cuda num_pools_t,
+                                     int32_cuda pool_t_size_,
+                                     int32_cuda pool_t_step_,
+                                     int32_cuda num_pools_h,
+                                     int32_cuda pool_h_size_,
+                                     int32_cuda pool_h_step_,
+                                     int32_cuda num_pools_f,
+                                     int32_cuda pool_f_size_,
+                                     int32_cuda pool_f_step_, 
+                                     int index_max_) {
+  cudaF_max_mat_blocks_back(Gr, Bl, src, dst,
+                            num_pools_t, pool_t_size_, pool_t_step_,
+                            num_pools_h, pool_h_size_, pool_h_step_,
+                            num_pools_f, pool_f_size_, pool_f_step_,
+                            index_max_);
 }
 inline void cuda_add_mat_diag_vec(dim3 Gr, dim3 Bl, double alpha, double *mat,
                                   MatrixDim mat_dim, const double *mat2,
