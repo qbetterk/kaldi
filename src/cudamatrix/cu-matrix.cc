@@ -1238,11 +1238,11 @@ void CuMatrixBase<Real>::MaxMatBlocks(const CuMatrixBase<Real> &A,
       // dim3 dimGrid, dimBlock;
       // GetBlockSizesForSimpleMatrixOperation(NumRows(), NumCols(),
       //                                       &dimGrid, &dimBlock);
-      cuda_max_mat_blocks(dimGrid, dimBlock, A.data_, data_,
-                          input_t_dim_, pool_t_size_, pool_t_step_,
-                          input_h_dim_, pool_h_size_, pool_h_step_,
-                          input_f_dim_, pool_f_size_, pool_f_step_,
-                          index_max_, (transA == kTrans ? 1 : 0));
+      cuda_max_mat_blocks(dimGrid, dimBlock, A.data_, data_, index_max_,
+                          pool_t_size_, pool_h_size_, pool_f_size_,
+                          pool_t_step_, pool_h_step_, pool_f_step_,
+                                        input_h_dim_, input_f_dim_,
+                          (transA == kTrans ? 1 : 0));
       CU_SAFE_CALL(cudaGetLastError());
 
       CuDevice::Instantiate().AccuProfile(__func__, tim);
@@ -1275,6 +1275,7 @@ void CuMatrixBase<Real>::MaxMatBlocks(const CuMatrixBase<Real> &A,
                 }
               }
             }
+            *this[t][h * num_pools_f + f] = max_value;
             tmp += 2
           }
         }
@@ -1304,11 +1305,10 @@ void CuMatrixBase<Real>::MaxMatBlocks(const CuMatrixBase<Real> &A,
       // dim3 dimGrid, dimBlock;
       // GetBlockSizesForSimpleMatrixOperation(NumRows(), NumCols(),
       //                                       &dimGrid, &dimBlock);
-      cuda_max_mat_blocks_back(A.data_, data_, Dim(), 
-                          num_pools_t, pool_t_size_, pool_t_step_,
-                          num_pools_h, pool_h_size_, pool_h_step_,
-                          num_pools_f, pool_f_size_, pool_f_step_,
-                          index_max_,)
+      cuda_max_mat_blocks_back(A.data_, data_, index_max_
+                               pool_t_size_, pool_h_size_, pool_f_size_,
+                               pool_t_step_, pool_h_step_, pool_f_step_,
+                                             input_h_dim_, input_f_dim_)
       // cuda_max_mat_blocks_back(dimGrid, dimBlock, index_max_,
       //                       A.data_, A.Dim(), data_, Dim());
       CU_SAFE_CALL(cudaGetLastError());
