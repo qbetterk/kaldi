@@ -1251,12 +1251,14 @@ void CuMatrixBase<Real>::MaxMatBlocks(const CuMatrixBase<Real> &A,
     {
     // maxpooling without cuda
       int32 tmp = 0;
+      // Real *data = this->data_;
+      // std::vector<int32> idx_tmp(index_max_.dim_);
       for (int32 t = 0; t < num_pools_t; t++) {
         for (int32 h = 0; h < num_pools_t; h++) {
           for (int32 f = 0; f < num_pools_f; f++) {
             // initialize the maximum value as the first element in the pool
             int32 max_x = 0; int32 max_y = 0; 
-            int32 max_value = A[t * pool_t_step_][h * pool_h_step_ * input_f_dim_ + f * pool_f_step_];
+            int32 max_value = A(t * pool_t_step_, h * pool_h_step_ * input_f_dim_ + f * pool_f_step_);
             
             // find the maximm value in the pool
             for (int32 x = 0; x < pool_t_size_; x++) {
@@ -1265,21 +1267,25 @@ void CuMatrixBase<Real>::MaxMatBlocks(const CuMatrixBase<Real> &A,
               for (int32 y = 0; y < pool_h_size_; y++) { 
                 for (int32 z = 0; z < pool_f_size_; z++) {              
                   int32 cur_y = (h * pool_h_step_ + y) * input_f_dim_ + f * pool_f_step_ + z;
-                  if (A[cur_x][cur_y] > max_value) {
+                  if (A(cur_x, cur_y) > max_value) {
                     max_x = cur_x;
                     max_y = cur_y;
-                    max_value = A[cur_x][cur_y];
-                    index_max_[tmp] = cur_x;
-                    index_max_[tmp+1] = cur_y;
+                    max_value = A(cur_x, cur_y);
+                    index_max_(tmp) = cur_x;
+                    index_max_(tmp+1) = cur_y;
                   }
                 }
               }
             }
-            *this[t][h * num_pools_f + f] = max_value;
+            (*this)(t, h * num_pools_f + f) = max_value;
             tmp += 2;
           }
         }
       }
+      // CuArray<int32> cu_cols(idx_tmp);
+      // // index_max_->CopyCols(index_max_, cu_cols);
+      // // CuVectorBase<Real> ttmp(idx_tmp);
+      // index_max_.CopyFromVec(cu_cols);
     }
   } else {
 
@@ -1305,12 +1311,12 @@ void CuMatrixBase<Real>::MaxMatBlocks(const CuMatrixBase<Real> &A,
       // dim3 dimGrid, dimBlock;
       // GetBlockSizesForSimpleMatrixOperation(NumRows(), NumCols(),
       //                                       &dimGrid, &dimBlock);
-      cuda_max_mat_blocks_back(dimGrid, dimBlock, A.data_, data_, index_max_,
-                               pool_t_size_, pool_h_size_, pool_f_size_,
-                               pool_t_step_, pool_h_step_, pool_f_step_,
-                                             input_h_dim_, input_f_dim_);
-      // cuda_max_mat_blocks_back(dimGrid, dimBlock, index_max_,
-      //                       A.data_, A.Dim(), data_, Dim());
+
+      // cuda_max_mat_blocks_back(dimGrid, dimBlock, A.data_, data_, index_max_,
+      //                          pool_t_size_, pool_h_size_, pool_f_size_,
+      //                          pool_t_step_, pool_h_step_, pool_f_step_,
+      //                                        input_h_dim_, input_f_dim_);
+
       CU_SAFE_CALL(cudaGetLastError());
       CuDevice::Instantiate().AccuProfile(__func__, tim);
     } else
@@ -1319,7 +1325,7 @@ void CuMatrixBase<Real>::MaxMatBlocks(const CuMatrixBase<Real> &A,
     // maxpooling backward propagation without cuda
       this->SetZero();
       for (int32 x = 0; x < num_pools_t * num_pools_h * num_pools_f; x += 2) {
-        *this[index_max_[x]][index_max_[x+1]] = 1;
+        (*this)(index_max_(x),index_max_(x+1)) = 1;
       }
       this->MulElements(A);
     }
