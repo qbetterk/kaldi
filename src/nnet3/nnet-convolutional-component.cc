@@ -679,12 +679,12 @@ MaxPoolingOverBlock::MaxPoolingOverBlock(
     pool_f_step_(other.pool_f_step_) { }
 
 // aquire input dim
-int32 MaxpoolingComponent::InputDim() const {
+int32 MaxPoolingOverBlock::InputDim() const {
   return input_t_dim_ * input_h_dim_ * input_f_dim_;
 }
 
 // aquire output dim
-int32 MaxpoolingComponent::OutputDim() const {
+int32 MaxPoolingOverBlock::OutputDim() const {
   int32 num_pools_t = 1 + (input_t_dim_ - pool_t_size_) / pool_t_step_;
   int32 num_pools_h = 1 + (input_h_dim_ - pool_h_size_) / pool_h_step_;
   int32 num_pools_f = 1 + (input_f_dim_ - pool_f_size_) / pool_f_step_;
@@ -692,7 +692,7 @@ int32 MaxpoolingComponent::OutputDim() const {
 }
 
 // check the component parameters
-void MaxpoolingComponent::Check() const {
+void MaxPoolingOverBlock::Check() const {
   // sanity check of the max pooling parameters
   KALDI_ASSERT(input_t_dim_ > 0);
   KALDI_ASSERT(input_h_dim_ > 0);
@@ -804,10 +804,11 @@ void* MaxPoolingOverBlock::Propagate(const ComponentPrecomputedIndexes *indexes,
                                      const CuMatrixBase<BaseFloat> &in_value,
                                      CuMatrixBase<BaseFloat> *out_value) const {
 
-  out_value->MaxMatBlocks(in_value, index_max_, kNoTrans,
+  out_value->MaxMatBlocks(in_value, index_max_,
                     input_t_dim_, pool_t_size_, pool_t_step_,
                     input_h_dim_, pool_h_size_, pool_h_step_,
-                    input_f_dim_, pool_f_size_, pool_f_step_);
+                    input_f_dim_, pool_f_size_, pool_f_step_,
+                    kNoTrans);
   return NULL;
 }
 
@@ -822,10 +823,11 @@ void MaxPoolingOverBlock::Backprop(
     CuMatrixBase<BaseFloat> *in_deriv) const {
 
   if (in_deriv) {
-    in_derv->MaxMatBlocks(out_deriv, index_max_, kNoTrans,
+    in_deriv->MaxMatBlocks(out_deriv, index_max_,
                           input_t_dim_, pool_t_size_, pool_t_step_,
                           input_h_dim_, pool_h_size_, pool_h_step_,
-                          input_f_dim_, pool_f_size_, pool_f_step_);
+                          input_f_dim_, pool_f_size_, pool_f_step_,
+                          kNoTrans);
 
   }
 }

@@ -1191,7 +1191,6 @@ void CuMatrixBase<Real>::AddMatBlocks(Real alpha, const CuMatrixBase<Real> &A,
 template<typename Real>
 void CuMatrixBase<Real>::MaxMatBlocks(const CuMatrixBase<Real> &A,
                                       CuVectorBase<Real> &index_max_,
-                                      MatrixTransposeType transA,
                                       const int32 input_t_dim_,
                                       const int32 pool_t_size_,
                                       const int32 pool_t_step_,
@@ -1200,7 +1199,8 @@ void CuMatrixBase<Real>::MaxMatBlocks(const CuMatrixBase<Real> &A,
                                       const int32 pool_h_step_,
                                       const int32 input_f_dim_,
                                       const int32 pool_f_size_,
-                                      const int32 pool_f_step_) {
+                                      const int32 pool_f_step_,
+                                      MatrixTransposeType transA) {
   if (num_rows_ == 0 || num_cols_ == 0) return;
 
   int32 num_pools_t = 1 + (input_t_dim_ - pool_t_size_) / pool_t_step_;
@@ -1266,17 +1266,17 @@ void CuMatrixBase<Real>::MaxMatBlocks(const CuMatrixBase<Real> &A,
                 for (int32 z = 0; z < pool_f_size_; z++) {              
                   int32 cur_y = (h * pool_h_step_ + y) * input_f_dim_ + f * pool_f_step_ + z;
                   if (A[cur_x][cur_y] > max_value) {
-                    max_x = cur_x
+                    max_x = cur_x;
                     max_y = cur_y;
                     max_value = A[cur_x][cur_y];
-                    index_max_[tmp] = cur_x
-                    index_max_[tmp+1] = cur_y
+                    index_max_[tmp] = cur_x;
+                    index_max_[tmp+1] = cur_y;
                   }
                 }
               }
             }
             *this[t][h * num_pools_f + f] = max_value;
-            tmp += 2
+            tmp += 2;
           }
         }
       }
@@ -1305,10 +1305,10 @@ void CuMatrixBase<Real>::MaxMatBlocks(const CuMatrixBase<Real> &A,
       // dim3 dimGrid, dimBlock;
       // GetBlockSizesForSimpleMatrixOperation(NumRows(), NumCols(),
       //                                       &dimGrid, &dimBlock);
-      cuda_max_mat_blocks_back(A.data_, data_, index_max_
+      cuda_max_mat_blocks_back(dimGrid, dimBlock, A.data_, data_, index_max_,
                                pool_t_size_, pool_h_size_, pool_f_size_,
                                pool_t_step_, pool_h_step_, pool_f_step_,
-                                             input_h_dim_, input_f_dim_)
+                                             input_h_dim_, input_f_dim_);
       // cuda_max_mat_blocks_back(dimGrid, dimBlock, index_max_,
       //                       A.data_, A.Dim(), data_, Dim());
       CU_SAFE_CALL(cudaGetLastError());
@@ -1317,11 +1317,11 @@ void CuMatrixBase<Real>::MaxMatBlocks(const CuMatrixBase<Real> &A,
 #endif
     {
     // maxpooling backward propagation without cuda
-      *this.SetZero()
+      this->SetZero();
       for (int32 x = 0; x < num_pools_t * num_pools_h * num_pools_f; x += 2) {
-        *this[index_max_[x]][index_max_[x+1]] = 1
+        *this[index_max_[x]][index_max_[x+1]] = 1;
       }
-      *this.MulElements(A);
+      this->MulElements(A);
     }
   }
 }

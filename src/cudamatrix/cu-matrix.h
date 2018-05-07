@@ -527,11 +527,11 @@ class CuMatrixBase {
   ///       function set all the values in &out_deriv whose index is not in 
   ///       vector(not corresponding to maximum value in each pool of &in_value) 
   ///       as zero, and keeps those correponding to maximum value as the *in_deriv.
-  void MaxMatBlocks(const CuMatrixBase<Real> &A, CuVectorBase<Real> &index_max_,
-                    MatrixTransposeType trans = kNoTrans,
+  void MaxMatBlocks(const CuMatrixBase<Real> &A, CuVectorBase<Real> &index_max_,                    
                     const int32 input_t_dim_, const int32 pool_t_size_, const int32 pool_t_step_,
                     const int32 input_h_dim_, const int32 pool_h_size_, const int32 pool_h_step_,
-                    const int32 input_f_dim_, const int32 pool_f_size_, const int32 pool_f_step_);
+                    const int32 input_f_dim_, const int32 pool_f_size_, const int32 pool_f_step_,
+                    MatrixTransposeType trans = kNoTrans);
 
   /// (for each column c of *this), c = alpha * col + beta * c
   void AddVecToCols(Real alpha, const CuVectorBase<Real> &col, Real beta = 1.0);

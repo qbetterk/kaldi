@@ -775,7 +775,7 @@ static void _add_mat_blocks_trans(Real alpha, const Real* src,
 
 template<typename Real>
 __global__
-static void _max_mat_blocks(const Real* src, Real* dst, Real* index_max_,
+static void _max_mat_blocks(const Real *src, Real *dst, Real *index_max_,
                             const int32_cuda pool_t_size_,                            
                             const int32_cuda pool_h_size_,
                             const int32_cuda pool_f_size_,
@@ -829,7 +829,7 @@ static void _max_mat_blocks(const Real* src, Real* dst, Real* index_max_,
 // are exchanged.
 template<typename Real>
 __global__
-static void _max_mat_blocks_trans(const Real* src, Real* dst, Real* index_max_,
+static void _max_mat_blocks_trans(const Real *src, Real *dst, Real *index_max_,
                                   const int32_cuda pool_t_size_,                            
                                   const int32_cuda pool_h_size_,
                                   const int32_cuda pool_f_size_,
@@ -874,7 +874,7 @@ static void _max_mat_blocks_trans(const Real* src, Real* dst, Real* index_max_,
 
 template<typename Real>
 __global__
-static void _max_mat_blocks_back(const Real* src, Real* dst, Real* index_max_,
+static void _max_mat_blocks_back(const Real *src, Real *dst, Real *index_max_,
                                  const int32_cuda pool_t_size_,                            
                                  const int32_cuda pool_h_size_,
                                  const int32_cuda pool_f_size_,
