@@ -554,6 +554,9 @@ class CuMatrixBase {
   ///         pool_f_step_    the number of steps taken along f-axis of input
   ///                         before computing the next pool (e.g. the stride
   ///                          size along t-axis)
+  ///         stride          the time stride size within blocks. So we get 
+  ///                         one row of maxpooling candidate every stride rows
+  ///                         in the input matrix.
 
   ///         index_max_      a vector that store the index of the maximum 
   ///                         value as (r, c), used in back-propagation. The 
@@ -580,7 +583,7 @@ class CuMatrixBase {
   ///    where:
   ///      start_row    = idx_t * pool_t_step_
   ///      start_col(i) = (idx_h * pool_h_step_ + i) * input_f_dim_ + idx_f * pool_f_step_
-  void MaxMatBlocks(const CuMatrixBase<Real> &A, CuVectorBase<Real> &index_max_,                    
+  void MaxMatBlocks(const CuMatrixBase<Real> &A, CuVectorBase<Real> &index_max_, const int32 stride,                    
                     const int32 input_t_dim_, const int32 pool_t_size_, const int32 pool_t_step_,
                     const int32 input_h_dim_, const int32 pool_h_size_, const int32 pool_h_step_,
                     const int32 input_f_dim_, const int32 pool_f_size_, const int32 pool_f_step_,

@@ -1191,6 +1191,7 @@ void CuMatrixBase<Real>::AddMatBlocks(Real alpha, const CuMatrixBase<Real> &A,
 template<typename Real>
 void CuMatrixBase<Real>::MaxMatBlocks(const CuMatrixBase<Real> &A,
                                       CuVectorBase<Real> &index_max_,
+                                      const int32 stride,
                                       const int32 input_t_dim_,
                                       const int32 pool_t_size_,
                                       const int32 pool_t_step_,
@@ -1234,10 +1235,10 @@ void CuMatrixBase<Real>::MaxMatBlocks(const CuMatrixBase<Real> &A,
       dim3 dimBlock(num_pools_t, num_pools_h, num_pools_f);
       dim3 dimGrid(1);
 
-      cuda_max_mat_blocks(dimGrid, dimBlock, A.data_, data_, index_max_.data_,
-                          pool_t_size_, pool_h_size_, pool_f_size_,
-                          pool_t_step_, pool_h_step_, pool_f_step_,
-                                        input_h_dim_, input_f_dim_,
+      cuda_max_mat_blocks(dimGrid, dimBlock, A.data_, data_, index_max_.data_, stride,
+                          input_t_dim_, pool_t_size_, pool_t_step_,
+                          input_h_dim_, pool_h_size_, pool_h_step_,
+                          input_f_dim_, pool_f_size_, pool_f_step_,
                           (transA == kTrans ? 1 : 0));
       CU_SAFE_CALL(cudaGetLastError());
 
@@ -1300,9 +1301,9 @@ void CuMatrixBase<Real>::MaxMatBlocks(const CuMatrixBase<Real> &A,
       dim3 dimGrid(1);
 
       cuda_max_mat_blocks_back(dimGrid, dimBlock, A.data_, data_, index_max_.data_,
-                               pool_t_size_, pool_h_size_, pool_f_size_,
-                               pool_t_step_, pool_h_step_, pool_f_step_,
-                                             input_h_dim_, input_f_dim_);
+                               input_t_dim_, pool_t_size_, pool_t_step_,
+                               input_h_dim_, pool_h_size_, pool_h_step_,
+                               input_f_dim_, pool_f_size_, pool_f_step_);
 
       CU_SAFE_CALL(cudaGetLastError());
       CuDevice::Instantiate().AccuProfile(__func__, tim);
