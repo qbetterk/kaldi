@@ -4105,7 +4105,7 @@ void cudaF_max_mat_blocks(dim3 Gr, dim3 Bl,
                           const int32_cuda input_f_dim_,
                           int A_trans) {
   if (A_trans) {
-    _max_mat_blocks_trans<<<Gr,Bl>>>(src, dst, index_max_
+    _max_mat_blocks_trans<<<Gr,Bl>>>(src, dst, index_max_,
                         pool_t_size_, pool_h_size_, pool_f_size_,
                         pool_t_step_, pool_h_step_, pool_f_step_,
                                       input_h_dim_, input_f_dim_);

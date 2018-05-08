@@ -1207,7 +1207,6 @@ void CuMatrixBase<Real>::MaxMatBlocks(const CuMatrixBase<Real> &A,
   int32 num_pools_h = 1 + (input_h_dim_ - pool_h_size_) / pool_h_step_;
   int32 num_pools_f = 1 + (input_f_dim_ - pool_f_size_) / pool_f_step_;
 
-  // Not sure whether this needed?
   KALDI_ASSERT((input_t_dim_ - pool_t_size_) % pool_t_step_ == 0 && 
                (input_h_dim_ - pool_h_size_) % pool_h_step_ == 0 &&
                (input_f_dim_ - pool_f_size_) % pool_f_step_ == 0);
@@ -1216,7 +1215,6 @@ void CuMatrixBase<Real>::MaxMatBlocks(const CuMatrixBase<Real> &A,
       A.NumCols() >= (transA == kNoTrans ? num_cols_ : num_rows_)) {
     // This is the "forward-propagation" version of MaxMatBlocks.
     // It supports both regular and transposed operation.
-
     if (transA == kNoTrans) {
       KALDI_ASSERT(A.NumRows() == input_t_dim_ &&
                    A.NumCols() == input_h_dim_ * input_f_dim_ &&
@@ -1235,10 +1233,8 @@ void CuMatrixBase<Real>::MaxMatBlocks(const CuMatrixBase<Real> &A,
       CuTimer tim;
       dim3 dimBlock(num_pools_t, num_pools_h, num_pools_f);
       dim3 dimGrid(1);
-      // dim3 dimGrid, dimBlock;
-      // GetBlockSizesForSimpleMatrixOperation(NumRows(), NumCols(),
-      //                                       &dimGrid, &dimBlock);
-      cuda_max_mat_blocks(dimGrid, dimBlock, A.data_, data_,// index_max_,
+
+      cuda_max_mat_blocks(dimGrid, dimBlock, A.data_, data_, index_max_.data_,
                           pool_t_size_, pool_h_size_, pool_f_size_,
                           pool_t_step_, pool_h_step_, pool_f_step_,
                                         input_h_dim_, input_f_dim_,
@@ -1251,8 +1247,6 @@ void CuMatrixBase<Real>::MaxMatBlocks(const CuMatrixBase<Real> &A,
     {
     // maxpooling without cuda
       int32 tmp = 0;
-      // Real *data = this->data_;
-      // std::vector<int32> idx_tmp(index_max_.dim_);
       for (int32 t = 0; t < num_pools_t; t++) {
         for (int32 h = 0; h < num_pools_t; h++) {
           for (int32 f = 0; f < num_pools_f; f++) {
@@ -1271,8 +1265,8 @@ void CuMatrixBase<Real>::MaxMatBlocks(const CuMatrixBase<Real> &A,
                     max_x = cur_x;
                     max_y = cur_y;
                     max_value = A(cur_x, cur_y);
-                    index_max_(tmp) = cur_x;
-                    index_max_(tmp+1) = cur_y;
+                    index_max_(tmp) = max_x;
+                    index_max_(tmp+1) = max_y;
                   }
                 }
               }
@@ -1304,14 +1298,11 @@ void CuMatrixBase<Real>::MaxMatBlocks(const CuMatrixBase<Real> &A,
       CuTimer tim;
       dim3 dimBlock(num_pools_t, num_pools_h, num_pools_f);
       dim3 dimGrid(1);
-      // dim3 dimGrid, dimBlock;
-      // GetBlockSizesForSimpleMatrixOperation(NumRows(), NumCols(),
-      //                                       &dimGrid, &dimBlock);
 
-      // cuda_max_mat_blocks_back(dimGrid, dimBlock, A.data_, data_, index_max_,
-      //                          pool_t_size_, pool_h_size_, pool_f_size_,
-      //                          pool_t_step_, pool_h_step_, pool_f_step_,
-      //                                        input_h_dim_, input_f_dim_);
+      cuda_max_mat_blocks_back(dimGrid, dimBlock, A.data_, data_, index_max_.data_,
+                               pool_t_size_, pool_h_size_, pool_f_size_,
+                               pool_t_step_, pool_h_step_, pool_f_step_,
+                                             input_h_dim_, input_f_dim_);
 
       CU_SAFE_CALL(cudaGetLastError());
       CuDevice::Instantiate().AccuProfile(__func__, tim);

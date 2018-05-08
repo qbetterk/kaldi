@@ -529,7 +529,7 @@ class MaxPoolingOverBlock: public Component {
                         Component *to_update,
                         CuMatrixBase<BaseFloat> *in_deriv) const;
   virtual void Check() const;
-  CuVectorBase<BaseFloat> index_max_; // the index of maximum value
+  
   
  protected:
   int32 input_t_dim_;   // size of the input along t-axis
@@ -550,10 +550,9 @@ class MaxPoolingOverBlock: public Component {
   int32 pool_f_step_;   // the number of steps taken along f-axis of input
   // before computing the next pool
 
-  // CuVectorBase<BaseFloat> index_max_; // the index of maximum value
-  // std::vector<int32> index_max_;
+  CuVectorBase<BaseFloat> index_max_; // the index of maximum value
 
-  // MaxPoolingOverBlock &operator = (const MaxPoolingOverBlock &other); // Disallow.
+  MaxPoolingOverBlock &operator = (const MaxPoolingOverBlock &other); // Disallow.
 };
 
 } // namespace nnet3
