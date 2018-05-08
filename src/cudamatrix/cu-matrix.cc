@@ -1238,7 +1238,7 @@ void CuMatrixBase<Real>::MaxMatBlocks(const CuMatrixBase<Real> &A,
       // dim3 dimGrid, dimBlock;
       // GetBlockSizesForSimpleMatrixOperation(NumRows(), NumCols(),
       //                                       &dimGrid, &dimBlock);
-      cuda_max_mat_blocks(dimGrid, dimBlock, A.data_, data_, index_max_,
+      cuda_max_mat_blocks(dimGrid, dimBlock, A.data_, data_,// index_max_,
                           pool_t_size_, pool_h_size_, pool_f_size_,
                           pool_t_step_, pool_h_step_, pool_f_step_,
                                         input_h_dim_, input_f_dim_,
@@ -1282,10 +1282,6 @@ void CuMatrixBase<Real>::MaxMatBlocks(const CuMatrixBase<Real> &A,
           }
         }
       }
-      // CuArray<int32> cu_cols(idx_tmp);
-      // // index_max_->CopyCols(index_max_, cu_cols);
-      // // CuVectorBase<Real> ttmp(idx_tmp);
-      // index_max_.CopyFromVec(cu_cols);
     }
   } else {
 

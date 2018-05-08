@@ -786,7 +786,7 @@ static void _max_mat_blocks(const Real *src, Real *dst, Real *index_max_,
                             const int32_cuda input_f_dim_) {
   int32_cuda i = blockIdx.x * blockDim.x + threadIdx.x;
   int32_cuda j = blockIdx.y * blockDim.y + threadIdx.y;
-  int32_cuda k = blockIdx.z * blcokDim.z + threadIdx.z;
+  int32_cuda k = blockIdx.z * blockDim.z + threadIdx.z;
   int32_cuda num_pools_h = 1 + (input_h_dim_ - pool_h_size_) / pool_h_step_;
   int32_cuda num_pools_f = 1 + (input_f_dim_ - pool_f_size_) / pool_f_step_;
 
@@ -800,17 +800,17 @@ static void _max_mat_blocks(const Real *src, Real *dst, Real *index_max_,
 
   for (int32_cuda t = 0; t < pool_t_size_; t++) {
     // the index of row in *src
-    idx_row = i * pool_t_step_ + t;
+    int32_cuda idx_row = i * pool_t_step_ + t;
 
     for (int32_cuda h = 0; h < pool_h_size_; h++) {
       for (int32_cuda f = 0; f < pool_f_size_; f++) {
         // the index of column in *src
-        idx_col = (j * pool_h_step_ + h) * input_f_dim_ + k * pool_f_step_ + f;
+        int32_cuda idx_col = (j * pool_h_step_ + h) * input_f_dim_ + k * pool_f_step_ + f;
 
         if (src[idx_row][idx_col] > max_value) {
           max_row = idx_row;
           max_col = idx_col;
-          max_value = src[idx_row][idx_col]
+          max_value = src[idx_row][idx_col];
         }
       } 
     }
@@ -840,7 +840,7 @@ static void _max_mat_blocks_trans(const Real *src, Real *dst, Real *index_max_,
                                   const int32_cuda input_f_dim_) {
   int32_cuda i = blockIdx.x * blockDim.x + threadIdx.x;
   int32_cuda j = blockIdx.y * blockDim.y + threadIdx.y;
-  int32_cuda k = blockIdx.z * blcokDim.z + threadIdx.z;
+  int32_cuda k = blockIdx.z * blockDim.z + threadIdx.z;
   int32_cuda num_pools_h = 1 + (input_h_dim_ - pool_h_size_) / pool_h_step_;
   int32_cuda num_pools_f = 1 + (input_f_dim_ - pool_f_size_) / pool_f_step_;
 
@@ -849,16 +849,16 @@ static void _max_mat_blocks_trans(const Real *src, Real *dst, Real *index_max_,
   int32_cuda max_value = src[max_col][max_row];
 
   for (int32_cuda t = 0; t < pool_t_size_; t++) {
-  	idx_row = i * pool_t_step_ + t;
+  	int32_cuda idx_row = i * pool_t_step_ + t;
 
     for (int32_cuda h = 0; h < pool_h_size_; h++) {
       for (int32_cuda f = 0; f < pool_f_size_; f++) {
-        idx_col = (j * pool_h_step_ + h) * input_f_dim_ + k * pool_f_step_ + f;
+        int32_cuda idx_col = (j * pool_h_step_ + h) * input_f_dim_ + k * pool_f_step_ + f;
 
         if (src[idx_col][idx_row] > max_value) {
           max_row = idx_row;
           max_col = idx_col;
-          max_value = src[idx_col][idx_row]
+          max_value = src[idx_col][idx_row];
         }
       } 
     }
@@ -885,7 +885,7 @@ static void _max_mat_blocks_back(const Real *src, Real *dst, Real *index_max_,
                                  const int32_cuda input_f_dim_) {
   int32_cuda i = blockIdx.x * blockDim.x + threadIdx.x;
   int32_cuda j = blockIdx.y * blockDim.y + threadIdx.y;
-  int32_cuda k = blockIdx.z * blcokDim.z + threadIdx.z;
+  int32_cuda k = blockIdx.z * blockDim.z + threadIdx.z;
   int32_cuda num_pools_h = 1 + (input_h_dim_ - pool_h_size_) / pool_h_step_;
   int32_cuda num_pools_f = 1 + (input_f_dim_ - pool_f_size_) / pool_f_step_;
 

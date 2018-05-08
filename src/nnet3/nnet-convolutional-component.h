@@ -374,11 +374,10 @@ class TimeHeightConvolutionComponent: public UpdatableComponent {
   this component should be compatible with TimeHeightConvolutionComponent
 
   MaxPoolingOverBlock :
-  MaxPoolingOverBlock component was firstly used in ConvNet for selecting an
-  representative activation in an area. It inspired Maxout nonlinearity.
-  Each output element of this component is the maximum of a block of
-  input elements where the block has a 2.5D dimension (pool_t_size_,
-  pool_h_size_ * pool_f_size_).
+  MaxPoolingOverBlock component was firstly used in ConvNet. It inspired 
+  Maxout nonlinearity. Each output element of this component is the 
+  maximum of a block of input elements where the block has a 
+  dimension (pool_t_size_, pool_h_size_ * pool_f_size_).
   Blocks could overlap if the shift value on any axis is smaller
   than its corresponding pool size (e.g. pool_t_step_ < pool_t_size_).
   If the shift values are euqal to their pool size, there is no
@@ -387,15 +386,66 @@ class TimeHeightConvolutionComponent: public UpdatableComponent {
  
   This component is designed to be used after a ConvolutionComponent
   so that the input matrix is propagated from a 2d-convolutional layer.
-  This component implements 2.5d-maxpooling which performs
+  This component implements maxpooling which performs
   max pooling along the three axes.
  
-  Input : A 2.5D matrix with dimensions:
+  Input : A matrix with dimensions:
          t: (e.g. time)
          h: (e.g. height, mel-frequency)
          f: (e.g. channels like number of filters in the ConvolutionComponent)
- 
-         The reason why we call the matrix 2.5D is because we compress the 3D block 
+
+  Parameters:
+
+            input_t_dim_    size of the input along t-axis
+                            (e.g. number of time steps)
+            input_h_dim_    size of input along h-axis
+                            (e.g. number of mel-frequency bins)
+            input_f_dim_    size of input along f-axis
+                            (e.g. number of filters in the ConvolutionComponent)
+
+            pool_t_size_    size of the pooling window along t-axis
+            pool_h_size_    size of the pooling window along h-axis
+            pool_f_size_    size of the pooling window along f-axis
+
+            pool_t_step_    the number of steps taken along t-axis of input
+                            before computing the next pool (e.g. the stride
+                             size along t-axis)
+            pool_h_step_    the number of steps taken along h-axis of input
+                            before computing the next pool (e.g. the stride
+                             size along t-axis)
+            pool_f_step_    the number of steps taken along f-axis of input
+                            before computing the next pool (e.g. the stride
+                             size along t-axis)
+
+            index_max_      a vector that store the index of the maximum 
+                            value as (r, c), used in back-propagation. The 
+                            size of this vector is 2 * num_pools_t * 
+                            num_pools_h * num_pools_f
+
+         So there are totally num_pools_t * num_pools_h * num_pools_f blocks,
+         where:
+           num_pools_t = 1 + (input_t_dim_ - pool_t_size_) / pool_t_step_; 
+           // the number of blocks in t dimension
+           num_pools_h = 1 + (input_h_dim_ - pool_h_size_) / pool_h_step_; 
+           // the number of blocks in h dimension
+           num_pools_f = 1 + (input_f_dim_ - pool_f_size_) / pool_f_step_; 
+           // the number of blocks in f dimension
+
+         If we have index idx_t, idx_h, idx_f in each axis, then we can find 
+         the block with:
+           row index: 
+             [start_t, start_t + pool_t_size_];
+           column index: combination of sets:
+             [start_col(0), start_col(0) + pool_f_size_],
+             [start_col(1), start_col(1) + pool_f_size_],
+             ...,
+             [start_col(pool_h_size_), start_col(pool_h_size_) + pool_f_size_]
+         where:
+           start_row    = idx_t * pool_t_step_
+           start_col(i) = (idx_h * pool_h_step_ + i) * input_f_dim_ + idx_f * pool_f_step_
+
+  Example:
+         We store the 3D matrix 
          into a 2D matrix by concatenating each 2D matrix at different channel like:
  
                      h = 0                   h = 1
@@ -442,45 +492,11 @@ class TimeHeightConvolutionComponent: public UpdatableComponent {
       stride of height(poo_h_step), we arrange each row of output as:
       (all filters for height 0)(all filters for height 1)...
 
-  Parameters:
-
-            input_t_dim_    size of the input along t-axis
-                            (e.g. number of time steps)
-            input_h_dim_    size of input along h-axis
-                            (e.g. number of mel-frequency bins)
-            input_f_dim_    size of input along f-axis
-                            (e.g. number of filters in the ConvolutionComponent)
-
-            pool_t_size_    size of the pooling window along t-axis
-            pool_h_size_    size of the pooling window along h-axis
-            pool_f_size_    size of the pooling window along f-axis
-
-            pool_t_step_    the number of steps taken along t-axis of input
-                            before computing the next pool (e.g. the stride
-                             size along t-axis)
-            pool_h_step_    the number of steps taken along h-axis of input
-                            before computing the next pool (e.g. the stride
-                             size along t-axis)
-            pool_f_step_    the number of steps taken along f-axis of input
-                            before computing the next pool (e.g. the stride
-                             size along t-axis)
-
-            index_max_      a vector that store the index of the maximum 
-                            value as (r, c), used in back-propagation. The 
-                            size of this vector is 2 * num_pools_t * 
-                            num_pools_h * num_pools_f
-
  
  
-  Output : The output is also a 2.5D tensor with dimension (num_block_t by 
-           num_block_h * num_block_f) where:
- 
-           num_pools_t = 1 + (input_t_dim_ - pool_t_size_) / pool_t_step_; 
-           // the number of blocks in t dimension
-           num_pools_h = 1 + (input_h_dim_ - pool_h_size_) / pool_h_step_; 
-           // the number of blocks in h dimension
-           num_pools_f = 1 + (input_f_dim_ - pool_f_size_) / pool_f_step_; 
-           // the number of blocks in f dimension
+  Output : The output is also a 2D matrix with dimension (num_block_t by 
+           num_block_h * num_block_f), with each element corresponding to
+           a block.
  
  
  */

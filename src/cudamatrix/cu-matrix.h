@@ -527,6 +527,59 @@ class CuMatrixBase {
   ///       function set all the values in &out_deriv whose index is not in 
   ///       vector(not corresponding to maximum value in each pool of &in_value) 
   ///       as zero, and keeps those correponding to maximum value as the *in_deriv.
+  /// Parameters:
+  ///    
+  ///    size of input matrix:
+  ///         input_t_dim_    size of the input along t-axis
+  ///                         (e.g. number of time steps)
+  ///         input_h_dim_    size of input along h-axis
+  ///                         (e.g. number of mel-frequency bins)
+  ///         input_f_dim_    size of input along f-axis
+  ///                         (e.g. number of filters in the ConvolutionComponent)
+  ///  
+  ///    block size:
+  ///         pool_t_size_    size of the pooling window along t-axis
+  ///         pool_h_size_    size of the pooling window along h-axis
+  ///         pool_f_size_    size of the pooling window along f-axis
+  ///                         (So, the dimension of block is:
+  ///                          pool_t_size_ by pool_h_size_ * pool_f_size_)
+  ///    
+  ///    stride size:
+  ///         pool_t_step_    the number of steps taken along t-axis of input
+  ///                         before computing the next pool (e.g. the stride
+  ///                          size along t-axis)
+  ///         pool_h_step_    the number of steps taken along h-axis of input
+  ///                         before computing the next pool (e.g. the stride
+  ///                          size along t-axis)
+  ///         pool_f_step_    the number of steps taken along f-axis of input
+  ///                         before computing the next pool (e.g. the stride
+  ///                          size along t-axis)
+
+  ///         index_max_      a vector that store the index of the maximum 
+  ///                         value as (r, c), used in back-propagation. The 
+  ///                         size of this vector is 2 * num_pools_t * 
+  ///                         num_pools_h * num_pools_f
+  ///
+  ///   So there are totally num_pools_t * num_pools_h * num_pools_f blocks,
+  ///   where:
+  ///       num_pools_t = 1 + (input_t_dim_ - pool_t_size_) / pool_t_step_; 
+  ///       // the number of blocks in t dimension
+  ///       num_pools_h = 1 + (input_h_dim_ - pool_h_size_) / pool_h_step_; 
+  ///       // the number of blocks in h dimension
+  ///       num_pools_f = 1 + (input_f_dim_ - pool_f_size_) / pool_f_step_; 
+  ///       // the number of blocks in f dimension
+  ///    If we have index idx_t, idx_h, idx_f in each axis, then we can find 
+  ///    the block with:
+  ///      row index: 
+  ///        [start_t, start_t + pool_t_size_];
+  ///      column index: combination of sets:
+  ///        [start_col(0), start_col(0) + pool_f_size_],
+  ///        [start_col(1), start_col(1) + pool_f_size_],
+  ///        ...,
+  ///        [start_col(pool_h_size_), start_col(pool_h_size_) + pool_f_size_]
+  ///    where:
+  ///      start_row    = idx_t * pool_t_step_
+  ///      start_col(i) = (idx_h * pool_h_step_ + i) * input_f_dim_ + idx_f * pool_f_step_
   void MaxMatBlocks(const CuMatrixBase<Real> &A, CuVectorBase<Real> &index_max_,                    
                     const int32 input_t_dim_, const int32 pool_t_size_, const int32 pool_t_step_,
                     const int32 input_h_dim_, const int32 pool_h_size_, const int32 pool_h_step_,
