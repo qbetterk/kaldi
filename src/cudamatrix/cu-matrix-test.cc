@@ -2917,6 +2917,97 @@ static void UnitTestCuMatrixEqualElementMask() {
 
 }
 
+template<typename Real>
+static void UnitTestCuMatrixMaxMatBlocks() {
+  for (int32 l = 0; l < 5; l++) {
+    int32 stride = RandInt(1, 5);
+    int32 input_t_dim_ = RandInt(1, 100);
+    int32 pool_t_size_ = RandInt(1, 10);
+    int32 pool_t_step_ = RandInt(1, 10);
+    int32 input_h_dim_ = RandInt(1, 100);
+    int32 pool_h_size_ = RandInt(1, 10);
+    int32 pool_h_step_ = RandInt(1, 10);
+    int32 input_f_dim_ = RandInt(1, 100);
+    int32 pool_f_size_ = RandInt(1, 10);
+    int32 pool_f_step_ = RandInt(1, 10);
+
+
+    // this part is for testing of forward propagation
+    CuMatrix<Real> in_value(input_t_dim_, input_h_dim_ * input_f_dim_);
+    in_value.SetRandn();
+
+    int32 num_pools_t = 1 + (input_t_dim_ - pool_t_size_) / pool_t_step_;
+    int32 num_pools_h = 1 + (input_h_dim_ - pool_h_size_) / pool_h_step_;
+    int32 num_pools_f = 1 + (input_f_dim_ - pool_f_size_) / pool_f_step_;
+
+    CuMatrix<Real> out_value(num_pools_t, num_pools_h * num_pools_f);
+    out_value.SetRandn();
+
+    CuVector<Real> index_max_(2 * num_pools_t * num_pools_h * num_pools_f);
+    index_max_.SetRandn();
+
+    CuMatrix<Real> out_value_copy(out_value);
+
+    out_value.MaxMatBlocks(in_value, index_max_,
+                    input_t_dim_, pool_t_size_, pool_t_step_,
+                    input_h_dim_, pool_h_size_, pool_h_step_,
+                    input_f_dim_, pool_f_size_, pool_f_step_,
+                    kNoTrans);
+    int32 tmp = 0;
+    for (int32 t = 0; t < num_pools_t; t++) {
+      for (int32 h = 0; h < num_pools_t; h++) {
+        for (int32 f = 0; f < num_pools_f; f++) {
+          // initialize the maximum value as the first element in the pool
+          int32 max_x = 0; int32 max_y = 0;
+          int32 max_value = in_value(t * pool_t_step_, h * pool_h_step_ * input_f_dim_ + f * pool_f_step_);
+
+          // find the maximm value in the pool
+          for (int32 x = 0; x < pool_t_size_; x += stride) {
+            int32 cur_x = t * pool_t_step_ + x;
+
+            for (int32 y = 0; y < pool_h_size_; y++) {
+              for (int32 z = 0; z < pool_f_size_; z++) {
+                int32 cur_y = (h * pool_h_step_ + y) * input_f_dim_ + f * pool_f_step_ + z;
+                if (in_value(cur_x, cur_y) > max_value) {
+                  max_x = cur_x;
+                  max_y = cur_y;
+                  max_value = in_value(cur_x, cur_y);
+                  index_max_(tmp) = max_x;
+                  index_max_(tmp+1) = max_y;
+                }
+              }
+            }
+          }
+          out_value_copy(t, h * num_pools_f + f) = max_value;
+          tmp += 2;
+        }
+      }
+    }
+
+    AssertEqual(out_value, out_value_copy);
+
+    // this part is for testing backward propagation
+    CuMatrix<Real> in_deriv(input_t_dim_, input_h_dim_ * input_f_dim_);
+    in_deriv.SetZero();
+    CuMatrix<Real> out_deriv(num_pools_t, num_pools_h * num_pools_f);
+    out_deriv.SetRandn();
+    CuMatrix<Real> in_deriv_copy(in_deriv);
+
+    in_deriv.MaxMatBlocks(out_deriv, index_max_,
+                   input_t_dim_, pool_t_size_, pool_t_step_,
+                   input_h_dim_, pool_h_size_, pool_h_step_,
+                   input_f_dim_, pool_f_size_, pool_f_step_,
+                   kNoTrans);
+
+    for (int32 x = 0; x < num_pools_t * num_pools_h * num_pools_f; x += 2) {
+      int32 row_tmp = (x / 2) / (num_pools_h * num_pools_f);
+      int32 col_tmp = (x / 2) % (num_pools_h * num_pools_f);
+      in_deriv_copy(index_max_(x),index_max_(x+1)) = out_deriv(row_tmp, col_tmp);
+    }
+    AssertEqual(in_deriv, in_deriv_copy);
+  }
+}
+
 template<typename Real> void CudaMatrixUnitTest() {
   UnitTestCuMatrixApplyExpSpecial<Real>();
   UnitTestCuMatrixApplyExpLimited<Real>();
@@ -2987,6 +3078,7 @@ template<typename Real> void CudaMatrixUnitTest() {
   UnitTestCuMatrixAddToElements<Real>();
   UnitTestCuMatrixLookup<Real>();
   UnitTestCuMatrixEqualElementMask<Real>();
+  UnitTestCuMatrixMaxMatBlocks<Real>();
   // test CuVector<Real> methods
   UnitTestCuVectorAddVec<Real>();
   UnitTestCuVectorAddRowSumMat<Real>();

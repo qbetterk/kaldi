@@ -583,12 +583,10 @@ class CuMatrixBase {
   ///    where:
   ///      start_row    = idx_t * pool_t_step_
   ///      start_col(i) = (idx_h * pool_h_step_ + i) * input_f_dim_ + idx_f * pool_f_step_
-  void MaxMatBlocks(const CuMatrixBase<Real> &A, CuVectorBase<Real> &index_max_, const int32 stride,                    
-                    const int32 input_t_dim_, const int32 pool_t_size_, const int32 pool_t_step_,
+  void MaxMatBlocks(const CuMatrixBase<Real> &A, CuVectorBase<Real> &index_max_, const int32 stride,                    const int32 input_t_dim_, const int32 pool_t_size_, const int32 pool_t_step_,
                     const int32 input_h_dim_, const int32 pool_h_size_, const int32 pool_h_step_,
                     const int32 input_f_dim_, const int32 pool_f_size_, const int32 pool_f_step_,
                     MatrixTransposeType trans = kNoTrans);
-
   /// (for each column c of *this), c = alpha * col + beta * c
   void AddVecToCols(Real alpha, const CuVectorBase<Real> &col, Real beta = 1.0);
   /// (for each row r of *this), r = alpha * row + beta * r

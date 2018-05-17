@@ -1313,9 +1313,10 @@ void CuMatrixBase<Real>::MaxMatBlocks(const CuMatrixBase<Real> &A,
     // maxpooling backward propagation without cuda
       this->SetZero();
       for (int32 x = 0; x < num_pools_t * num_pools_h * num_pools_f; x += 2) {
-        (*this)(index_max_(x),index_max_(x+1)) = 1;
+        int32 row_tmp = (x / 2) / (num_pools_h * num_pools_f);
+        int32 col_tmp = (x / 2) % (num_pools_h * num_pools_f);
+        (*this)(index_max_(x),index_max_(x+1)) = A(row_tmp, col_tmp);
       }
-      this->MulElements(A);
     }
   }
 }
